@@ -134,7 +134,8 @@ function mailLocaleDisponibile(): bool {
     if (!function_exists('mail')) return false;
     $sendmail = trim((string)ini_get('sendmail_path'));
     if ($sendmail === '') return PHP_OS_FAMILY === 'Windows';
-    return is_executable(strtok($sendmail, ' '));
+    // @: with open_basedir (common on shared hostings) the check emits a warning
+    return @is_executable(strtok($sendmail, ' '));
 }
 define('MAIL_MAILER',     strtolower(cfg('MAIL_MAILER', cfg('MAIL_HOST') !== '' ? 'smtp' : (mailLocaleDisponibile() ? 'mail' : 'log'))));
 define('MAIL_HOST',       cfg('MAIL_HOST'));
@@ -423,7 +424,13 @@ function inviaEmail(
             imapSalvaInviata($inviato);
         }
     } else {
-        $esito = @mail($destinatario, $oggettoCodificato, $body, $headers);
+        // Envelope sender (-f) = MAIL_FROM: shared hostings such as Aruba
+        // reject or mark as spam messages whose envelope sender is not a
+        // mailbox of the hosted domain.
+        $parametri = filter_var(MAIL_FROM, FILTER_VALIDATE_EMAIL) && preg_match('/^[A-Za-z0-9._%+@-]+$/', MAIL_FROM)
+            ? '-f' . MAIL_FROM
+            : '';
+        $esito = @mail($destinatario, $oggettoCodificato, $body, $headers, $parametri);
     }
 
     if (!$esito) {

@@ -103,6 +103,13 @@ Se la cartella `data` non è scrivibile, l'installer mostra il contenuto di
 
 Per reinstallare elimina `data/config.php`.
 
+Problemi frequenti:
+
+- Scegli PHP 8.2 o superiore dal pannello dell'hosting (su Aruba: versione
+  PHP dell'hosting); con versioni più vecchie compare una pagina bianca o un errore.
+- "500 Internal Server Error" su tutte le pagine: alcuni hosting non permettono
+  `Options` nel `.htaccess`. Metti un `#` davanti a `Options -Indexes`.
+
 ## Configurazione
 
 Niente è obbligatorio. Ogni impostazione può essere una variabile d'ambiente o

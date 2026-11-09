@@ -111,6 +111,13 @@ If the `data` folder is not writable, the installer shows the content of
 
 To reinstall, delete `data/config.php`.
 
+Troubleshooting:
+
+- Choose PHP 8.2 or newer in the hosting control panel (on Aruba: PHP
+  version of the hosting); older versions show a blank page or an error.
+- "500 Internal Server Error" on every page: some hostings do not allow
+  `Options` in `.htaccess`. Put a `#` in front of `Options -Indexes`.
+
 ## Configuration
 
 Nothing is required. Every setting can be an environment variable or a key in
