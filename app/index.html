@@ -321,9 +321,12 @@
   <script>
     document.getElementById('anno').textContent = new Date().getFullYear();
 
-    const nomeApp = localStorage.getItem('app_nome') || 'HouseFunds';
-    document.getElementById('appNome').textContent = nomeApp;
-    document.title = `Accedi — ${nomeApp}`;
+    // Instance name (APP_NAME): cached in the browser, refreshed by the init below
+    function mostraNomeApp(nome) {
+      document.getElementById('appNome').textContent = nome;
+      document.title = `Accedi — ${nome}`;
+    }
+    mostraNomeApp(localStorage.getItem('app_nome') || 'HouseFunds');
 
     // ── Helpers ─────────────────────────────────────────────────
     function mostraCard(id) {
@@ -428,6 +431,10 @@
         if (data.successo && data.dati && data.dati.installato === false) {
           window.location.href = BASE_URL + '/install.html';
           return;
+        }
+        if (data.successo && data.dati && data.dati.nome) {
+          try { localStorage.setItem('app_nome', data.dati.nome); } catch(_) {}
+          mostraNomeApp(data.dati.nome);
         }
       } catch(_) {}
 

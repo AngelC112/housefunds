@@ -33,6 +33,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   A.csrfToken = sessionStorage.getItem('csrf_token');
 
+  // Instance name (APP_NAME), cached by the login page and the app
+  try {
+    const nomeApp = localStorage.getItem('app_nome');
+    if (nomeApp) document.title = `Admin — ${nomeApp}`;
+  } catch (_) {}
+
   await csrfFresco();
   await caricaCase();
 
@@ -116,12 +122,12 @@ function aggiornaUIPerRuolo() {
   if (btnInvita) btnInvita.classList.toggle('hidden', !isAdmin);
 
   // Tab: SEMPRE tutti visibili (il non-admin vede i dati ma non può modificarli)
-  ['nav-categorie', 'nav-pivot', 'nav-impostazioni'].forEach(id => {
+  ['nav-categorie', 'nav-pivot'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('hidden');
   });
 
-  // Pulsanti "+ Nuova" su Pivot, Impostazioni, tab Utenti: solo admin
+  // Pulsanti "+ Nuova" su Pivot, tab Utenti: solo admin
   ['btnInvitaMembro'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', !isAdmin);
@@ -143,10 +149,6 @@ function aggiornaUIPerRuolo() {
 
   const btnNuovoEvento = document.querySelector('[onclick="apriModalEvento()"]');
   if (btnNuovoEvento) btnNuovoEvento.classList.toggle('hidden', !isAdmin);
-
-  // Salva impostazioni: solo admin
-  const btnSalvaImp = document.querySelector('[onclick="salvaImpostazioni()"]');
-  if (btnSalvaImp) btnSalvaImp.classList.toggle('hidden', !isAdmin);
 }
 
 async function cambiaCasa(casaId) {
@@ -188,7 +190,6 @@ async function cambiaCasa(casaId) {
       if (tabAttivo === 'utenti')       caricaUtenti();
       if (tabAttivo === 'categorie')    caricaCategorie();
       if (tabAttivo === 'pivot')        caricaPivot();
-      if (tabAttivo === 'impostazioni') caricaImpostazioni();
       if (tabAttivo === 'eventi')       caricaEventi();
     }
 
@@ -371,7 +372,6 @@ function mostraTab(nome) {
   if (nome === 'utenti')      caricaUtenti();
   if (nome === 'categorie')   caricaCategorie();
   if (nome === 'pivot')       caricaPivot();
-  if (nome === 'impostazioni') caricaImpostazioni();
   if (nome === 'eventi')      caricaEventi();
   if (nome === 'profilo')     mostraTab_profilo();
 }
@@ -1479,40 +1479,6 @@ async function eliminaPivot(id) {
     await api(`/api/pivot.php?id=${id}`, { method: 'DELETE' });
     caricaPivot();
   } catch(e) { alert(e.message); }
-}
-
-// ============================================================
-// IMPOSTAZIONI
-// ============================================================
-async function caricaImpostazioni() {
-  try {
-    const dati = await api('/api/admin.php?risorsa=impostazioni');
-    const imp  = dati.impostazioni || {};
-    document.getElementById('impNome').value         = imp.app_nome || 'HouseFunds';
-    document.getElementById('impValuta').value       = imp.valuta || '€';
-    document.getElementById('impValutaCodice').value = imp.valuta_codice || 'EUR';
-  } catch(e) {}
-}
-
-async function salvaImpostazioni() {
-  const errEl = document.getElementById('impErrore');
-  const okEl  = document.getElementById('impSuccesso');
-  errEl.classList.add('hidden');
-  okEl.classList.add('hidden');
-  const payload = {
-    app_nome:      document.getElementById('impNome').value.trim(),
-    valuta:        document.getElementById('impValuta').value.trim(),
-    valuta_codice: document.getElementById('impValutaCodice').value.trim().toUpperCase(),
-    csrf_token:    A.csrfToken,
-  };
-  if (!payload.app_nome) { mostraErr('impErrore', 'Nome obbligatorio.'); return; }
-  try {
-    await api('/api/admin.php?risorsa=impostazioni', { method: 'POST', body: JSON.stringify(payload) });
-    okEl.textContent = 'Impostazioni salvate con successo.';
-    okEl.classList.remove('hidden');
-    localStorage.setItem('app_nome', payload.app_nome);
-    setTimeout(() => okEl.classList.add('hidden'), 3000);
-  } catch(e) { mostraErr('impErrore', e.message); }
 }
 
 // ── Utility ──────────────────────────────────────────────────

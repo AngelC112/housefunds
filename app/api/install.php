@@ -30,11 +30,13 @@ function estensioniMancanti(): array {
 
 function statoInstallazione(): never {
     if (dbConfigurato()) {
-        risposta(['installato' => true]);
+        // nome: instance name (APP_NAME), shown in page titles and headers
+        risposta(['installato' => true, 'nome' => APP_NOME_DEFAULT]);
     }
     $driver = array_values(array_intersect(DB_DRIVER_SUPPORTATI, PDO::getAvailableDrivers()));
     risposta([
         'installato'          => false,
+        'nome'                => APP_NOME_DEFAULT,
         'driver_disponibili'  => $driver,
         'estensioni_mancanti' => estensioniMancanti(),
         'php'                 => PHP_VERSION,

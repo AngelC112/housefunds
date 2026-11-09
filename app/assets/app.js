@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     caricaListaPivot(),
     caricaDashboard(),
-    api('/api/admin.php?risorsa=impostazioni'),
+    api('/api/install.php?azione=stato'),
   ]);
 
   // Lingua e formati dal profilo (ricarica la pagina se cambiati su un altro dispositivo)
@@ -145,8 +145,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   S.initPronto = true;
 
+  // Instance name (APP_NAME) from the server; the cached copy is shown meanwhile
   if (impResult.status === 'fulfilled') {
-    const nome = impResult.value?.impostazioni?.app_nome || nomeCache;
+    const nome = impResult.value?.nome || nomeCache;
     if (nome !== nomeCache) {
       document.title = nome;
       document.getElementById('appNomeTop').textContent = nome;

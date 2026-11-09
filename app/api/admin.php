@@ -4,7 +4,7 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 error_reporting(0);
 // ============================================================
-// ADMIN.PHP - Gestione casa, membri, inviti, impostazioni, stats
+// ADMIN.PHP - Gestione casa, membri, inviti, stats
 //             + Invio email invito (v4)
 //             + Blocco reinvio 24h (v4)
 //             + Stato inviti (v4)
@@ -46,9 +46,6 @@ match(true) {
     $metodo === 'POST'   && $risorsa === 'inviti'                                 => creaInvito(),
     $metodo === 'POST'   && $risorsa === 'inviti'  && $azione === 'reinvia'       => reinviaEmail($id),   // NUOVO v4
     $metodo === 'DELETE' && $risorsa === 'inviti'       &&  $id                   => revocaInvito($id),
-    // Impostazioni
-    $metodo === 'GET'    && $risorsa === 'impostazioni'                           => leggiImpostazioni(),
-    $metodo === 'POST'   && $risorsa === 'impostazioni'                           => salvaImpostazioni(),
     // Stats
     $metodo === 'GET'    && $risorsa === 'stats'                                  => statsCasa(),
     default => rispostaErrore(404, 'Endpoint non trovato.')
@@ -708,44 +705,6 @@ function revocaInvito(int $id): void {
 
     $db->prepare("DELETE FROM inviti WHERE id = ? AND casa_id = ?")->execute([$id, $casaId]);
     risposta(['messaggio' => 'Invito revocato.']);
-}
-
-// ============================================================
-// IMPOSTAZIONI (scoped per casa)
-// ============================================================
-
-function leggiImpostazioni(): void {
-    [, $casaId] = richiedeAdminDiCasa();
-    $stmt = getDB()->prepare("SELECT chiave, valore FROM impostazioni WHERE casa_id = ?");
-    $stmt->execute([$casaId]);
-    $impostazioni = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $impostazioni[$row['chiave']] = $row['valore'];
-    }
-    risposta(['impostazioni' => $impostazioni]);
-}
-
-function salvaImpostazioni(): void {
-    [, $casaId] = richiedeAdminDiCasa();
-    $dati = inputJSON();
-    verificaCSRF($dati['csrf_token'] ?? null);
-
-    $consentite = ['app_nome', 'valuta', 'valuta_codice', 'anno_fiscale'];
-    $db         = getDB();
-
-    $stmt = $db->prepare("
-        INSERT INTO impostazioni (chiave, casa_id, valore) VALUES (?,?,?)
-        " . sqlSuConflitto(['chiave', 'casa_id'], 'valore = EXCLUDED.valore') . "
-    ");
-
-    foreach ($consentite as $chiave) {
-        if (isset($dati[$chiave])) {
-            $valore = sanitizzaStringa((string)$dati[$chiave], 100);
-            $stmt->execute([$chiave, $casaId, $valore]);
-        }
-    }
-
-    risposta(['messaggio' => 'Impostazioni salvate.']);
 }
 
 // ============================================================
