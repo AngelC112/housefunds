@@ -13,6 +13,12 @@ permissions:
   contents: read
   packages: write
 
+# One publish at a time: a push to main and a version tag on the same commit
+# would otherwise push the same image layers in parallel.
+concurrency:
+  group: docker-publish
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
