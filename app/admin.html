@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <title>Admin — HouseFunds</title>
+  <script>
+    window.BASE_URL = (function() {
+      const p = window.location.pathname;
+      return p.substring(0, p.lastIndexOf('/') + 1).replace(/\/$/, '');
+    })();
+  </script>
+  <!-- Multilingua: deve precedere gli altri script (traduce la pagina mentre viene costruita) -->
+  <script src="assets/i18n.js?v=3"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    .nav-item.active{color:#4f46e5;border-bottom:2px solid #4f46e5}
+    .spinner{border:2px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;width:18px;height:18px;animation:spin .6s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .slide-up{animation:su .25s ease}
+    @keyframes su{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .modal-overlay{background:rgba(0,0,0,.5);backdrop-filter:blur(2px)}
+    .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-red{background:#fee2e2;color:#dc2626}
+    .badge-gray{background:#f3f4f6;color:#6b7280}
+    .badge-indigo{background:#e0e7ff;color:#4f46e5}
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- TOP BAR -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="font-bold text-gray-800 text-sm">Amministrazione</span>
+    </div>
+    <div class="flex items-center gap-3">
+	  <select id="switchCasa"
+			  class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
+	  </select>
+      <a href="#" onclick="window.location.href=(window.BASE_URL||'')+'/app.html';return false;" class="text-xs text-indigo-600 hover:underline">← App</a>
+      <button onclick="logout()" class="text-xs text-gray-500 hover:text-red-500 transition-colors">Esci</button>
+    </div>
+  </div>
+</header>
+
+<!-- TAB NAV -->
+
+<div class="bg-white border-b border-gray-200 sticky top-14 z-20">
+  <div class="max-w-5xl mx-auto px-4 flex gap-0 overflow-x-auto">
+  <button onclick="mostraTab('case')"
+        class="nav-item active px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap"
+        id="nav-case">
+  🏠 Case
+</button>
+    <button onclick="mostraTab('utenti')"       class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-utenti">👥 Membri</button>
+    <button onclick="mostraTab('categorie')"    class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-categorie">🏷️ Categorie</button>
+    <button onclick="mostraTab('pivot')"        class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-pivot">📊 Pivot</button>
+    <button onclick="mostraTab('impostazioni')" class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-impostazioni">⚙️ Impostazioni</button>
+    <button onclick="mostraTab('eventi')" class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-eventi">🎯 Eventi</button>
+    <button onclick="mostraTab('profilo')" class="nav-item px-4 py-3 text-sm font-medium text-gray-500 whitespace-nowrap" id="nav-profilo">👤 Profilo</button>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto px-4 py-6 pb-12">
+<section id="tab-case" class="tab-panel active slide-up">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-semibold text-gray-800">Le tue case</h2>
+    <button onclick="apriModalNuovaCasa()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuova casa</button>
+  </div>
+  <div id="listaCase" class="space-y-3"></div>
+</section>
+
+  <!-- ── UTENTI ─────────────────────────────────────────── -->
+  <section id="tab-utenti" class="tab-panel slide-up">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-800">Membri della casa</h2>
+      <button id="btnInvitaMembro" onclick="apriModalUtente()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Invita membro</button>
+    </div>
+    <div id="listaUtenti" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50 mb-6"></div>
+
+    <div id="sezioneInviti" class="hidden">
+      <h2 class="font-semibold text-gray-800 mb-3">⏳ Inviti in attesa</h2>
+      <div id="listaInvitiPendenti" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50"></div>
+    </div>
+  </section>
+
+  <!-- ── CATEGORIE ──────────────────────────────────────── -->
+  <section id="tab-categorie" class="tab-panel slide-up">
+
+    <!-- Intestazione admin (con pulsante Nuova categoria) -->
+    <div id="catHeaderAdmin" class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-800">Categorie</h2>
+      <button onclick="apriModalCategoria()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuova</button>
+    </div>
+    <!-- Intestazione membro (solo lettura) -->
+    <div id="catHeaderMembro" class="hidden mb-4">
+      <h2 class="font-semibold text-gray-800">Categorie</h2>
+      <p class="text-xs text-gray-400 mt-0.5">Clicca su una categoria per vedere le sottocategorie.</p>
+    </div>
+
+    <div id="listaCategorie" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50 mb-4"></div>
+
+    <!-- Pannello sottocategorie drill-down (appare dopo click su categoria) -->
+    <div id="pannelloSottocategorie" class="hidden slide-up">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <button onclick="chiudiPannelloSottocategorie()"
+            class="text-gray-400 hover:text-gray-600 p-1 rounded" title="Chiudi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+          <h2 class="font-semibold text-gray-800">
+            Sottocategorie di <span id="scNomeCatPadre" class="text-indigo-600"></span>
+          </h2>
+        </div>
+        <button id="btnNuovaSottocategoria" onclick="apriModalSottocategoria()"
+          class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+          + Nuova
+        </button>
+      </div>
+      <div id="listaSottocategorie" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50"></div>
+    </div>
+
+  </section>
+
+  <!-- ── PIVOT ──────────────────────────────────────────── -->
+  <section id="tab-pivot" class="tab-panel slide-up">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-800">Configurazioni pivot</h2>
+      <button onclick="apriModalPivot()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuova</button>
+    </div>
+    <div id="listaPivotADM" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50"></div>
+  </section>
+
+  <!-- ── IMPOSTAZIONI ───────────────────────────────────── -->
+  <section id="tab-impostazioni" class="tab-panel slide-up">
+    <div class="bg-white rounded-xl border border-gray-100 p-6 max-w-md">
+      <h2 class="font-semibold text-gray-800 mb-5">Impostazioni applicazione</h2>
+      <div id="impErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+      <div id="impSuccesso" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Nome applicazione</label>
+        <input type="text" id="impNome" maxlength="50" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="mb-4">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Simbolo valuta</label>
+        <input type="text" id="impValuta" maxlength="5" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="mb-6">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Codice valuta (es. EUR)</label>
+        <input type="text" id="impValutaCodice" maxlength="5" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <button onclick="salvaImpostazioni()" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg text-sm">Salva impostazioni</button>
+    </div>
+  </section>
+  
+  <!-- ── PROFILO ───────────────────────────────────────── -->
+  <section id="tab-profilo" class="tab-panel slide-up">
+    <div class="max-w-md space-y-6">
+
+      <!-- Lingua e formati -->
+      <div class="bg-white rounded-xl border border-gray-100 p-6">
+        <h2 class="font-semibold text-gray-800 mb-4">🌐 Lingua e formati</h2>
+        <div id="profiloPrefErrore"   class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Lingua</label>
+            <select id="prefLingua" data-noi18n class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Valuta</label>
+            <select id="prefValuta" data-noi18n class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Formato importi</label>
+            <select id="prefFormatoNumero" data-noi18n class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Formato date</label>
+            <select id="prefFormatoData" data-noi18n class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></select>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mb-4"><span>Esempio</span>: <span id="prefAnteprima" data-noi18n></span></p>
+        <div class="flex gap-2">
+          <button onclick="salvaPreferenze()" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg text-sm">Salva preferenze</button>
+          <button onclick="ripristinaPrefLingua()" class="text-sm text-gray-500 hover:text-gray-700 px-3">Predefiniti della lingua</button>
+        </div>
+      </div>
+
+      <!-- Nome -->
+      <div class="bg-white rounded-xl border border-gray-100 p-6">
+        <h2 class="font-semibold text-gray-800 mb-4">Nome visualizzato</h2>
+        <div id="profiloNomeErrore"   class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div id="profiloNomeSuccesso" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+          <input type="text" id="profiloNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <button onclick="salvaNome()" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg text-sm">Aggiorna nome</button>
+      </div>
+
+      <!-- Email -->
+      <div class="bg-white rounded-xl border border-gray-100 p-6">
+        <h2 class="font-semibold text-gray-800 mb-4">Cambia email</h2>
+        <div id="profiloEmailErrore"   class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div id="profiloEmailSuccesso" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nuova email *</label>
+          <input type="email" id="profiloEmail" maxlength="150" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Password attuale (per conferma) *</label>
+          <input type="password" id="profiloEmailPassword" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <button onclick="salvaEmail()" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg text-sm">Aggiorna email</button>
+      </div>
+
+      <!-- Password -->
+      <div class="bg-white rounded-xl border border-gray-100 p-6">
+        <h2 class="font-semibold text-gray-800 mb-4">Cambia password</h2>
+        <div id="profiloPassErrore"   class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div id="profiloPassSuccesso" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Password attuale *</label>
+          <input type="password" id="profiloPassVecchia" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nuova password *</label>
+          <input type="password" id="profiloPassNuova" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Conferma nuova password *</label>
+          <input type="password" id="profiloPassConferma" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <p class="text-xs text-gray-400 mb-4">Min. 8 caratteri, una maiuscola, un numero, un carattere speciale.</p>
+        <button onclick="salvaPassword()" class="bg-indigo-600 text-white font-semibold py-2 px-5 rounded-lg text-sm">Aggiorna password</button>
+      </div>
+
+      <!-- Elimina account -->
+      <div class="bg-white rounded-xl border border-red-200 p-6">
+        <h2 class="font-semibold text-red-700 mb-2">Elimina account</h2>
+        <p class="text-sm text-gray-600 mb-2">L'eliminazione è <strong>definitiva</strong> e non si può annullare.</p>
+        <ul class="text-xs text-gray-500 list-disc pl-5 mb-4 space-y-1">
+          <li>Le case di cui sei l'unico membro vengono eliminate con tutte le spese, categorie ed eventi.</li>
+          <li>Esci dalle case condivise. Le spese che hai inserito lì restano agli altri membri come "Utente eliminato".</li>
+          <li>Se sei l'unico admin di una casa con altri membri, nomina prima un altro admin.</li>
+        </ul>
+        <div id="profiloEliminaErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-3"></div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Password attuale *</label>
+          <input type="password" id="profiloEliminaPassword" autocomplete="current-password" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Scrivi <strong>ELIMINA</strong> per confermare *</label>
+          <input type="text" id="profiloEliminaConferma" autocomplete="off" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <button onclick="eliminaAccount()" id="btnEliminaAccount" class="bg-red-600 text-white font-semibold py-2 px-5 rounded-lg text-sm">Elimina definitivamente</button>
+      </div>
+
+    </div>
+  </section>
+  
+    <!-- ── EVENTI ─────────────────────────────────────────── -->
+  <section id="tab-eventi" class="tab-panel slide-up">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-gray-800">Gestione eventi</h2>
+      <button onclick="apriModalEvento()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">+ Nuovo evento</button>
+    </div>
+    <div id="listaEventi" class="space-y-3"></div>
+  </section>
+</main>
+
+<!-- ============================================================ MODALI ============================================================ -->
+
+<!-- Modal Utente -->
+<div id="modalUtente" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalUtente')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-md p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalUtenteTitolo">Invita membro</h2>
+      <button onclick="chiudi('modalUtente')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="utenteErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+      <input type="email" id="utenteEmail" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Ruolo</label>
+      <select id="utenteRuolo" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+		<option value="membro">Membro</option>
+		<option value="admin">Admin</option>
+      </select>
+    </div>
+    <button onclick="salvaUtente()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Invia invito</button>
+  </div>
+</div>
+
+<!-- Modal Categoria -->
+<div id="modalCategoria" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalCategoria')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalCatTitolo">Nuova categoria</h2>
+      <button onclick="chiudi('modalCategoria')" class="text-gray-400">✕</button>
+    </div>
+    <div id="catErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="catId">
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <input type="text" id="catNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Tipo</label>
+      <select id="catTipo" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        <option value="uscita">Uscita</option>
+        <option value="accredito">Accredito (Entrata)</option>
+      </select>
+    </div>
+    <div class="mb-3 flex gap-3">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Colore</label>
+        <input type="color" id="catColore" value="#6366f1" class="w-full h-10 border border-gray-200 rounded-lg cursor-pointer">
+      </div>
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ordinamento</label>
+        <input type="number" id="catOrdinamento" value="0" min="0" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+    </div>
+    <div class="mb-5 flex items-center gap-2">
+      <input type="checkbox" id="catAttiva" class="rounded" checked>
+      <label for="catAttiva" class="text-sm text-gray-600">Categoria attiva</label>
+    </div>
+    <button onclick="salvaCategoria()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva</button>
+  </div>
+</div>
+
+<!-- Modal Sottocategoria -->
+<div id="modalSottocategoria" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalSottocategoria')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalScTitolo">Nuova sottocategoria</h2>
+      <button onclick="chiudi('modalSottocategoria')" class="text-gray-400">✕</button>
+    </div>
+    <div id="scErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="scId">
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Categoria padre *</label>
+      <select id="scCategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"></select>
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <input type="text" id="scNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-5 flex gap-3">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Ordinamento</label>
+        <input type="number" id="scOrdinamento" value="0" min="0" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="flex-1 flex items-end pb-1">
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" id="scAttiva" class="rounded" checked> Attiva
+        </label>
+      </div>
+    </div>
+    <button onclick="salvaSottocategoria()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva</button>
+  </div>
+</div>
+
+<!-- Modal Pivot -->
+<div id="modalPivot" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalPivot')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalPivotTitolo">Nuova pivot</h2>
+      <button onclick="chiudi('modalPivot')" class="text-gray-400">✕</button>
+    </div>
+    <div id="pivotErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="pivotId">
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <input type="text" id="pivotNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+      <input type="text" id="pivotDesc" maxlength="255" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Riga (dimensione)</label>
+        <select id="pivotRiga" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <option value="categoria">Categoria</option>
+          <option value="sottocategoria">Sottocategoria</option>
+          <option value="sottocategoria_evento">Sottocategoria / Evento</option>
+          <option value="utente">Utente</option>
+          <option value="mese">Mese</option>
+          <option value="anno">Anno</option>
+          <option value="giorno_settimana">Giorno settimana</option>
+          <option value="tipo">Tipo (Entrate/Uscite)</option>
+          <option value="categoria_eventi">Categoria (eventi raggruppati)</option>
+          <option value="evento">Evento</option>
+          <option value="voce_evento">Voce evento (mini-categoria)</option>
+        </select>
+      </div>
+	  <div class="mt-3">
+			<label class="text-sm text-gray-600">Riga livello 2 (opzionale)</label>
+			<select id="pivotRiga2" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200">
+				<option value="">— Nessuna —</option>
+				<option value="categoria">Categoria</option>
+				<option value="sottocategoria">Sottocategoria</option>
+				<option value="sottocategoria_evento">Sottocategoria / Evento</option>
+				<option value="utente">Utente</option>
+				<option value="mese">Mese</option>
+				<option value="anno">Anno</option>
+				<option value="giorno_settimana">Giorno settimana</option>
+				<option value="tipo">Tipo (Entrate/Uscite)</option>
+				<option value="categoria_eventi">Categoria (eventi raggruppati)</option>
+				<option value="evento">Evento</option>
+				<option value="voce_evento">Voce evento (mini-categoria)</option>
+			</select>
+		</div>
+
+		<div class="mt-3">
+			<label class="text-sm text-gray-600">Riga livello 3 (opzionale)</label>
+			<select id="pivotRiga3" class="w-full mt-1 px-3 py-2 rounded-lg border border-gray-200">
+				<option value="">— Nessuna —</option>
+				<option value="categoria">Categoria</option>
+				<option value="sottocategoria">Sottocategoria</option>
+				<option value="sottocategoria_evento">Sottocategoria / Evento</option>
+				<option value="utente">Utente</option>
+				<option value="mese">Mese</option>
+				<option value="anno">Anno</option>
+				<option value="giorno_settimana">Giorno settimana</option>
+				<option value="tipo">Tipo (Entrate/Uscite)</option>
+				<option value="categoria_eventi">Categoria (eventi raggruppati)</option>
+				<option value="evento">Evento</option>
+				<option value="voce_evento">Voce evento (mini-categoria)</option>
+			</select>
+		</div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Colonna (dimensione)</label>
+        <select id="pivotColonna" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <option value="mese">Mese</option>
+          <option value="anno">Anno</option>
+          <option value="categoria">Categoria</option>
+          <option value="sottocategoria">Sottocategoria</option>
+          <option value="sottocategoria_evento">Sottocategoria / Evento</option>
+          <option value="utente">Utente</option>
+          <option value="giorno_settimana">Giorno settimana</option>
+          <option value="tipo">Tipo (Entrate/Uscite)</option>
+          <option value="categoria_eventi">Categoria (eventi raggruppati)</option>
+          <option value="evento">Evento</option>
+          <option value="voce_evento">Voce evento (mini-categoria)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Valore</label>
+        <select id="pivotValore" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <option value="somma">Somma €</option>
+          <option value="conteggio">Conteggio</option>
+          <option value="media">Media €</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Filtro tipo</label>
+        <select id="pivotFiltro" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <option value="tutti">Tutti</option>
+          <option value="uscita">Solo uscite</option>
+          <option value="accredito">Solo entrate</option>
+        </select>
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Filtro eventi</label>
+      <select id="pivotFiltroEvento" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+        <option value="tutti">Tutte le spese</option>
+        <option value="esclusi">Escludi spese degli eventi</option>
+        <option value="solo">Solo spese degli eventi</option>
+      </select>
+    </div>
+    <div class="mb-5 flex gap-4">
+      <label class="flex items-center gap-2 text-sm text-gray-600">
+        <input type="checkbox" id="pivotVisibile" class="rounded" checked> Visibile
+      </label>
+      <div class="flex-1">
+        <input type="number" id="pivotOrdinamento" value="0" min="0" placeholder="Ordine" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+    </div>
+    <button onclick="salvaPivot()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva</button>
+  </div>
+</div>
+
+<!-- Modal Evento -->
+<div id="modalEvento" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalEvento')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-lg p-6 z-10 slide-up max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalEventoTitolo">Nuovo evento</h2>
+      <button onclick="chiudi('modalEvento')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="eventoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="eventoId">
+
+    <!-- Dati base -->
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <input type="text" id="eventoNome" maxlength="255" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+      <input type="text" id="eventoDescrizione" maxlength="500" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-4 flex items-center gap-3">
+      <label class="text-xs font-medium text-gray-600">Colore</label>
+      <input type="color" id="eventoColore" value="#4f46e5" class="h-9 w-16 border border-gray-200 rounded-lg cursor-pointer">
+    </div>
+
+    <!-- Mini-categorie -->
+    <div class="border-t pt-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-medium text-gray-600">Mini-categorie</span>
+        <button onclick="aggiungiMiniCategoria()" class="text-xs text-indigo-600 font-medium hover:underline">+ Aggiungi</button>
+      </div>
+      <div id="miniCatList" class="space-y-2"></div>
+    </div>
+
+    <!-- Collegamento sottocategorie -->
+    <div class="border-t pt-4 mb-5">
+      <p class="text-xs font-medium text-gray-600 mb-2">Categorie e sottocategorie che attivano la popup</p>
+      <p class="text-xs text-gray-400 mb-2">Spunta una categoria per collegarla per intero (puoi poi togliere singole sottocategorie), oppure apri la categoria con ▸ e scegli solo le sottocategorie che ti servono. I puntini colorati indicano altri eventi già collegati.</p>
+      <div id="subcatLinkList" class="space-y-0.5 max-h-72 overflow-y-auto border border-gray-100 rounded-lg p-1"></div>
+      <div id="subcatLinkRiepilogo" class="flex flex-wrap gap-1.5 mt-2"></div>
+    </div>
+
+    <button onclick="salvaEvento()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva evento</button>
+  </div>
+</div>
+
+<!--
+<script>
+  // Carica admin.js usando BASE_URL per evitare problemi di path relativo
+  (function() {
+    var s = document.createElement('script');
+    s.src = window.BASE_URL + '/assets/admin.js';
+    s.onerror = function() {
+      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:12px;text-align:center;font-family:sans-serif;z-index:9999">Errore: impossibile caricare admin.js dal path: ' + s.src + '</div>';
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+-->
+<!-- Modal Nuova Casa -->
+<div id="modalNuovaCasa" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalNuovaCasa')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800">Nuova casa</h2>
+      <button onclick="chiudi('modalNuovaCasa')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="nuovaCasaErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome casa *</label>
+      <input type="text" id="nuovaCasaNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Colore</label>
+      <input type="color" id="nuovaCasaColore" value="#4f46e5" class="w-full h-10 border border-gray-200 rounded-lg cursor-pointer">
+    </div>
+    <button onclick="salvaNuovaCasa()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Crea casa</button>
+  </div>
+</div>
+
+<!-- Modal Elimina / Abbandona Casa -->
+<div id="modalEliminaCasa" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalEliminaCasa')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="eliminaCasaTitolo">Abbandona casa</h2>
+      <button onclick="chiudi('modalEliminaCasa')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="eliminaCasaErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <div id="eliminaCasaWarning" class="hidden bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+    <input type="hidden" id="eliminaCasaId">
+    <p id="eliminaCasaTesto" class="text-sm text-gray-600 mb-5"></p>
+    <button onclick="confermaEliminaCasa()" id="btnConfermaElimina"
+      class="w-full bg-red-600 text-white font-semibold py-3 rounded-xl text-sm">Conferma</button>
+  </div>
+</div>
+
+<!-- Modal Assegna Nuovo Admin -->
+<div id="modalAssegnaAdmin" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalAssegnaAdmin')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800">Assegna nuovo admin</h2>
+      <button onclick="chiudi('modalAssegnaAdmin')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="assegnaAdminErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <p class="text-sm text-gray-600 mb-4">Sei l'unico admin. Scegli chi diventerà admin prima di abbandonare la casa.</p>
+    <input type="hidden" id="assegnaAdminCasaId">
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nuovo admin *</label>
+      <select id="assegnaAdminSelect" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"></select>
+    </div>
+    <button onclick="confermaAssegnaAdmin()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Assegna e abbandona</button>
+  </div>
+</div>
+
+<!-- Modal Rinomina Casa -->
+<div id="modalRinominaCasa" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalRinominaCasa')"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800">Rinomina casa</h2>
+      <button onclick="chiudi('modalRinominaCasa')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="rinominaErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="rinominaCasaId">
+    <div class="mb-5">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome casa *</label>
+      <input type="text" id="rinominaCasaNome" maxlength="100" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <button onclick="salvaRinominaCasa()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva</button>
+  </div>
+</div>
+
+<script src="assets/eventi_shared.js?v=4" defer></script>
+<script src="assets/admin.js?v=6" defer></script>
+</body>
+</html>

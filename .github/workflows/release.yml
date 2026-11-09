@@ -1,0 +1,38 @@
+# On a version tag (v1.2.3) builds the zip for shared hosting (no Docker):
+# the app folder with the Composer dependencies, ready to upload via FTP.
+name: Release zip
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd, zip, intl, mbstring
+          tools: composer:v2
+
+      - name: Install dependencies
+        working-directory: app
+        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
+
+      - name: Build zip
+        run: |
+          mkdir -p dist
+          cp -r app "dist/housefunds"
+          cp LICENSE COMMERCIAL.md dist/housefunds/
+          cd dist && zip -qr "housefunds-${GITHUB_REF_NAME}.zip" housefunds
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/housefunds-${{ github.ref_name }}.zip
+          generate_release_notes: true

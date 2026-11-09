@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="HouseFunds - Gestione spese familiari">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HouseFunds">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <title>Accedi — HouseFunds</title>
+  <script>
+    window.BASE_URL = (function() {
+      const p = window.location.pathname;
+      return p.substring(0, p.lastIndexOf('/') + 1).replace(/\/$/, '');
+    })();
+  </script>
+  <!-- Multilingua: deve precedere gli altri script (traduce la pagina mentre viene costruita) -->
+  <script src="assets/i18n.js?v=3"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); min-height: 100vh; }
+    .card { box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); transition: opacity .2s; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:active { opacity: 0.8; }
+    .shake { animation: shake .4s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center p-4">
+  <!-- Lingua della pagina (prima del login) -->
+  <div class="fixed top-3 right-3 z-50">
+    <select id="selLinguaPagina" data-noi18n aria-label="Lingua"
+      class="text-sm bg-white/90 border border-white/60 rounded-lg px-2 py-1 shadow"></select>
+  </div>
+
+  <div class="w-full max-w-sm">
+
+    <!-- Logo / Titolo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-white" id="appNome">HouseFunds</h1>
+      <p class="text-white/70 text-sm mt-1">Gestione spese familiari</p>
+    </div>
+
+    <!-- Card loading -->
+    <div class="bg-white rounded-2xl p-8 card flex flex-col items-center gap-3" id="cardLoading">
+      <svg class="w-7 h-7 text-indigo-500 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+      <p class="text-sm text-gray-400">Caricamento…</p>
+    </div>
+
+    <!-- Card login -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardLogin">
+      <h2 class="text-xl font-semibold text-gray-800 mb-6">Accedi al tuo account</h2>
+      <div id="erroreBox" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <form id="formLogin" novalidate>
+        <div class="mb-4">
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="email" name="email"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-sm transition-all"
+            placeholder="nome@esempio.it" autocomplete="email" inputmode="email" required>
+        </div>
+        <div class="mb-6">
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div class="relative">
+            <input type="password" id="password" name="password"
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 pr-11 text-gray-800 text-sm transition-all"
+              placeholder="••••••••" autocomplete="current-password" required>
+            <button type="button" id="togglePass"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+              aria-label="Mostra/nascondi password">
+              <svg id="iconOcchio" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="btnLogin"
+          class="btn-primary w-full text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2">
+          <span id="btnTesto">Accedi</span>
+          <svg id="btnSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        </button>
+      </form>
+      <p class="text-center text-sm text-gray-500 mt-5">
+        Non hai un account?
+        <button id="btnVaiRegistrazione" class="text-indigo-600 font-medium hover:underline">Registrati</button>
+      </p>
+    </div>
+
+    <!-- Card registrazione pubblica -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardRegistrazione">
+      <h2 class="text-xl font-semibold text-gray-800 mb-1">Crea il tuo account</h2>
+      <p class="text-sm text-gray-500 mb-5">Avrai subito la tua casa personale pronta all'uso.</p>
+      <div id="regErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <div id="regSuccesso" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <form id="formRegistrazione" novalidate>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome completo *</label>
+          <input type="text" id="regNome" maxlength="100"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Mario Rossi" autocomplete="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+          <input type="email" id="regEmail"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="nome@esempio.it" autocomplete="email" required>
+        </div>
+        <!-- Lingua e formati: precompilati dalla lingua del browser -->
+        <div class="mb-3 grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Lingua</label>
+            <select id="regLingua" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Valuta</label>
+            <select id="regValuta" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Formato importi</label>
+            <select id="regFormatoNumero" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 -mt-1 mb-3"><span>Esempio</span>: <span id="regAnteprima" data-noi18n></span></p>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Password *</label>
+          <input type="password" id="regPassword"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Min 8 car., 1 maiusc., 1 numero, 1 speciale" required>
+          <div class="mt-2 grid grid-cols-4 gap-1">
+            <div class="h-1 rounded bg-gray-200" id="regBarra1"></div>
+            <div class="h-1 rounded bg-gray-200" id="regBarra2"></div>
+            <div class="h-1 rounded bg-gray-200" id="regBarra3"></div>
+            <div class="h-1 rounded bg-gray-200" id="regBarra4"></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1" id="regForzaTesto"></p>
+        </div>
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Conferma password *</label>
+          <input type="password" id="regPassword2"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Ripeti la password" required>
+          <p class="text-xs hidden mt-1" id="regMatchTesto"></p>
+        </div>
+        <button type="submit" id="btnRegistra"
+          class="btn-primary w-full text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2">
+          <span id="btnRegistraTesto">Crea account</span>
+          <svg id="btnRegistraSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        </button>
+      </form>
+      <p class="text-center text-sm text-gray-500 mt-5">
+        Hai già un account?
+        <button id="btnVaiLogin" class="text-indigo-600 font-medium hover:underline">Accedi</button>
+      </p>
+    </div>
+
+    <!-- Card invito -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardInvito">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">🏠</span>
+        <h2 class="text-xl font-semibold text-gray-800">Sei stato invitato</h2>
+      </div>
+      <p class="text-sm text-gray-500 mb-1">Stai per unirti alla casa:</p>
+      <p class="text-base font-semibold text-indigo-700 mb-1" id="invitoNomeCasa">—</p>
+      <p class="text-xs text-gray-400 mb-5" id="invitoRuolo"></p>
+      <div id="invitoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+
+      <!-- Se già loggato: mostra solo pulsante accetta -->
+      <div id="invitoGiaLoggato" class="hidden">
+        <button id="btnAccettaInvito"
+          class="btn-primary w-full text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2">
+          <span id="btnAccettaTesto">Unisciti alla casa</span>
+          <svg id="btnAccettaSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Se non loggato: login o registrazione con token -->
+      <div id="invitoNonLoggato">
+        <p class="text-sm text-gray-600 mb-4">Accedi o crea un account per accettare l'invito.</p>
+        <div class="flex gap-3">
+          <button id="btnInvitoLogin"
+            class="flex-1 border border-indigo-500 text-indigo-600 font-semibold rounded-lg py-2.5 text-sm hover:bg-indigo-50 transition-colors">
+            Accedi
+          </button>
+          <button id="btnInvitoRegistrati"
+            class="btn-primary flex-1 text-white font-semibold rounded-lg py-2.5 text-sm">
+            Registrati
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card login con token invito -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardLoginInvito">
+      <button id="btnTornaInvito" class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Torna all'invito
+      </button>
+      <h2 class="text-xl font-semibold text-gray-800 mb-5">Accedi per unirti</h2>
+      <div id="loginInvitoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <form id="formLoginInvito" novalidate>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="loginInvitoEmail"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-sm transition-all"
+            placeholder="nome@esempio.it" autocomplete="email" required>
+        </div>
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <input type="password" id="loginInvitoPassword"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-800 text-sm transition-all"
+            placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <button type="submit" id="btnLoginInvito"
+          class="btn-primary w-full text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2">
+          <span id="btnLoginInvitoTesto">Accedi e unisciti</span>
+          <svg id="btnLoginInvitoSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Card registrazione con token invito -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardRegistrazioneInvito">
+      <button id="btnTornaInvito2" class="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Torna all'invito
+      </button>
+      <h2 class="text-xl font-semibold text-gray-800 mb-1">Crea account e unisciti</h2>
+      <p class="text-sm text-gray-500 mb-5">Dopo la registrazione entrerai automaticamente nella casa.</p>
+      <div id="regInvitoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+      <form id="formRegistrazioneInvito" novalidate>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Nome completo *</label>
+          <input type="text" id="regInvitoNome" maxlength="100"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Mario Rossi" autocomplete="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+          <input type="email" id="regInvitoEmail"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="nome@esempio.it" autocomplete="email" required>
+        </div>
+        <!-- Lingua e formati: precompilati dalla lingua del browser -->
+        <div class="mb-3 grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Lingua</label>
+            <select id="regInvitoLingua" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Valuta</label>
+            <select id="regInvitoValuta" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Formato importi</label>
+            <select id="regInvitoFormatoNumero" data-noi18n class="w-full border border-gray-300 rounded-lg px-2 py-3 text-sm bg-white"></select>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-400 -mt-1 mb-3"><span>Esempio</span>: <span id="regInvitoAnteprima" data-noi18n></span></p>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Password *</label>
+          <input type="password" id="regInvitoPassword"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Min 8 car., 1 maiusc., 1 numero, 1 speciale" required>
+        </div>
+        <div class="mb-5">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Conferma password *</label>
+          <input type="password" id="regInvitoPassword2"
+            class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm"
+            placeholder="Ripeti la password" required>
+          <p class="text-xs hidden mt-1" id="regInvitoMatchTesto"></p>
+        </div>
+        <button type="submit" id="btnRegistraInvito"
+          class="btn-primary w-full text-white font-semibold rounded-lg py-3 text-sm flex items-center justify-center gap-2">
+          <span id="btnRegistraInvitoTesto">Crea account e unisciti</span>
+          <svg id="btnRegistraInvitoSpinner" class="hidden w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center text-white/50 text-xs mt-6">
+      © <span id="anno"></span> <span data-noi18n>HouseFunds</span>
+    </p>
+  </div>
+
+  <script>
+    document.getElementById('anno').textContent = new Date().getFullYear();
+
+    const nomeApp = localStorage.getItem('app_nome') || 'HouseFunds';
+    document.getElementById('appNome').textContent = nomeApp;
+    document.title = `Accedi — ${nomeApp}`;
+
+    // ── Helpers ─────────────────────────────────────────────────
+    function mostraCard(id) {
+      ['cardLoading','cardLogin','cardRegistrazione',
+       'cardInvito','cardLoginInvito','cardRegistrazioneInvito'].forEach(c => {
+        document.getElementById(c).classList.toggle('hidden', c !== id);
+      });
+    }
+
+    function mostraErroreCard(elId, msg, cardId) {
+      const el = document.getElementById(elId);
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      const card = document.getElementById(cardId);
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 400);
+    }
+
+    // ── Lingua e formati (form di registrazione + selettore pagina) ──
+    const PREFS_FORM = ['reg', 'regInvito'];
+    const prefsModificate = {};   // valuta/formato scelti a mano: non sovrascriverli al cambio lingua
+
+    function prefsPerLingua(lingua) {
+      // La regione del browser (es. en-US) vale solo se la lingua coincide
+      const loc = I18N.localeBrowser();
+      return I18N.predefinite(lingua, loc.slice(0, 2).toLowerCase() === lingua ? loc : '');
+    }
+
+    function aggiornaAnteprima(pref) {
+      const v = document.getElementById(pref + 'Valuta').value;
+      const f = document.getElementById(pref + 'FormatoNumero').value;
+      document.getElementById(pref + 'Anteprima').textContent = I18N.fmtImportoCon(1234.56, v, f);
+    }
+
+    function impostaLinguaForm(lingua, origine) {
+      I18N.cambiaLinguaPagina(lingua);
+      document.getElementById('selLinguaPagina').value = lingua;
+      const def = prefsPerLingua(lingua);
+      PREFS_FORM.forEach(pref => {
+        if (pref + 'Lingua' !== origine) document.getElementById(pref + 'Lingua').value = lingua;
+        if (!prefsModificate[pref + 'Valuta'])        document.getElementById(pref + 'Valuta').value = def.valuta;
+        if (!prefsModificate[pref + 'FormatoNumero']) document.getElementById(pref + 'FormatoNumero').value = def.formato_numero;
+        aggiornaAnteprima(pref);
+      });
+    }
+
+    function inizializzaPrefsForm() {
+      const p = I18N.prefs;
+      const opzLingue = Object.entries(I18N.LINGUE).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+      const selPagina = document.getElementById('selLinguaPagina');
+      selPagina.innerHTML = Object.entries(I18N.LINGUE).map(([k, v]) => `<option value="${k}">🌐 ${v}</option>`).join('');
+      selPagina.value = p.lingua;
+      selPagina.addEventListener('change', () => impostaLinguaForm(selPagina.value, 'selLinguaPagina'));
+
+      PREFS_FORM.forEach(pref => {
+        const selL = document.getElementById(pref + 'Lingua');
+        const selV = document.getElementById(pref + 'Valuta');
+        const selN = document.getElementById(pref + 'FormatoNumero');
+        selL.innerHTML = opzLingue;
+        selV.innerHTML = I18N.VALUTE.map(c => `<option value="${c}">${c}</option>`).join('');
+        selN.innerHTML = I18N.FORMATI_NUMERO.map(f => `<option value="${f}">${f}</option>`).join('');
+        selL.value = p.lingua; selV.value = p.valuta; selN.value = p.formato_numero;
+        selL.addEventListener('change', () => impostaLinguaForm(selL.value, pref + 'Lingua'));
+        selV.addEventListener('change', () => { prefsModificate[pref + 'Valuta'] = true; aggiornaAnteprima(pref); });
+        selN.addEventListener('change', () => { prefsModificate[pref + 'FormatoNumero'] = true; aggiornaAnteprima(pref); });
+        aggiornaAnteprima(pref);
+      });
+    }
+    inizializzaPrefsForm();
+
+    /** Preferenze da inviare con la registrazione. */
+    function prefsDaForm(pref) {
+      const lingua = document.getElementById(pref + 'Lingua').value;
+      return {
+        lingua,
+        valuta:         document.getElementById(pref + 'Valuta').value,
+        formato_numero: document.getElementById(pref + 'FormatoNumero').value,
+        formato_data:   prefsPerLingua(lingua).formato_data,
+      };
+    }
+
+    function redirectDopoLogin(dati) {
+      // Preferenze dell'utente (lingua, valuta, formati) valide da qui in avanti
+      if (dati && dati.utente && dati.utente.lingua) I18N.impostaPreferenze(dati.utente, false);
+      // dati = { utente, casa_attiva: { id, nome, ruolo }, csrf_token }
+      sessionStorage.setItem('utente',      JSON.stringify(dati.utente));
+      sessionStorage.setItem('casa_attiva', JSON.stringify(dati.casa_attiva || null));
+      sessionStorage.setItem('csrf_token',  dati.csrf_token || '');
+      window.location.href = BASE_URL + '/app.html';
+    }
+
+    // ── Token invito da URL ──────────────────────────────────────
+    const urlParams   = new URLSearchParams(window.location.search);
+    const tokenInvito = urlParams.get('token') || null;
+
+    // ── Init ────────────────────────────────────────────────────
+    (async () => {
+      // 1. Not installed yet (no database configured): open the web installer
+      try {
+        const res  = await fetch(BASE_URL + '/api/install.php?azione=stato', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (data.successo && data.dati && data.dati.installato === false) {
+          window.location.href = BASE_URL + '/install.html';
+          return;
+        }
+      } catch(_) {}
+
+      document.getElementById('cardLoading').classList.add('hidden');
+
+      // 2. Sessione già attiva?
+      const raw = sessionStorage.getItem('utente');
+      if (raw) {
+        try {
+          const check = await fetch(BASE_URL + '/api/auth.php?azione=profilo', { credentials: 'same-origin' });
+          const checkData = await check.json();
+          if (checkData.successo) {
+            if (tokenInvito) {
+              // Sessione attiva + token invito: mostra card invito con opzione accetta diretto
+              await gestisciTokenConSessione(tokenInvito, checkData.dati);
+            } else {
+              // Nessun invito: redirect normale
+              const casaAttiva = JSON.parse(sessionStorage.getItem('casa_attiva') || 'null')
+                               || checkData.dati?.casa_attiva;
+              const ruolo = casaAttiva?.ruolo;
+              window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+            }
+            return;
+          } else {
+            sessionStorage.clear();
+          }
+        } catch(_) {
+          sessionStorage.clear();
+        }
+      }
+
+      // 3. Nessuna sessione
+      if (tokenInvito) {
+        await gestisciToken(tokenInvito);
+      } else {
+        mostraCard('cardLogin');
+      }
+    })();
+
+    // ── Gestione token invito (utente non loggato) ───────────────
+    async function gestisciToken(token) {
+      try {
+        const res  = await fetch(BASE_URL + '/api/auth.php?azione=verifica_invito&token=' + encodeURIComponent(token));
+        const data = await res.json();
+        if (!data.successo) {
+          mostraCard('cardLogin');
+          // Mostra errore dopo il render
+          setTimeout(() => mostraErroreCard('erroreBox', data.errore || 'Invito non valido o scaduto.', 'cardLogin'), 50);
+          return;
+        }
+        document.getElementById('invitoNomeCasa').textContent = data.dati.casa_nome;
+        document.getElementById('invitoRuolo').textContent    = 'Invitato da ' + (data.dati.invitante_nome || 'Amministratore') + ' · Ruolo: ' + (data.dati.ruolo === 'admin' ? 'Amministratore' : 'Membro');
+        document.getElementById('invitoGiaLoggato').classList.add('hidden');
+        document.getElementById('invitoNonLoggato').classList.remove('hidden');
+
+        // Precompila e blocca email nei form login/registrazione con invito
+        const emailInvitato  = data.dati.email_invitato  || '';
+        const emailRegistrata = data.dati.email_registrata || false;
+        ['loginInvitoEmail', 'regInvitoEmail'].forEach(id => {
+          const el = document.getElementById(id);
+          if (emailInvitato) {
+            el.value    = emailInvitato;
+            el.readOnly = true;
+            el.classList.add('bg-gray-50', 'text-gray-500', 'cursor-not-allowed');
+          }
+        });
+
+        // Nascondi il pulsante meno pertinente in base allo stato email
+        if (emailRegistrata) {
+          document.getElementById('btnInvitoRegistrati').classList.add('hidden');
+        } else {
+          document.getElementById('btnInvitoLogin').classList.add('hidden');
+        }
+
+        mostraCard('cardInvito');
+      } catch(_) {
+        mostraCard('cardLogin');
+      }
+    }
+
+    // ── Gestione token invito (utente già loggato) ───────────────
+    async function gestisciTokenConSessione(token, utenteDati) {
+      try {
+        const res  = await fetch(BASE_URL + '/api/auth.php?azione=verifica_invito&token=' + encodeURIComponent(token));
+        const data = await res.json();
+        if (!data.successo) {
+          // Invito non valido: redirect normale
+          const ruolo = utenteDati?.casa_attiva?.ruolo;
+          window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+          return;
+        }
+        document.getElementById('invitoNomeCasa').textContent = data.dati.casa_nome;
+        document.getElementById('invitoRuolo').textContent    = 'Invitato da ' + (data.dati.invitante_nome || 'Amministratore') + ' · Ruolo: ' + (data.dati.ruolo === 'admin' ? 'Amministratore' : 'Membro');
+        document.getElementById('invitoGiaLoggato').classList.remove('hidden');
+        document.getElementById('invitoNonLoggato').classList.add('hidden');
+        mostraCard('cardInvito');
+      } catch(_) {
+        const ruolo = utenteDati?.casa_attiva?.ruolo;
+        window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+      }
+    }
+
+    // ── Naviga tra login e registrazione ────────────────────────
+    document.getElementById('btnVaiRegistrazione').addEventListener('click', () => mostraCard('cardRegistrazione'));
+    document.getElementById('btnVaiLogin').addEventListener('click',          () => mostraCard('cardLogin'));
+
+    // ── Naviga invito → login/registrazione con token ────────────
+    document.getElementById('btnInvitoLogin').addEventListener('click',       () => mostraCard('cardLoginInvito'));
+    document.getElementById('btnInvitoRegistrati').addEventListener('click',  () => mostraCard('cardRegistrazioneInvito'));
+    document.getElementById('btnTornaInvito').addEventListener('click',       () => mostraCard('cardInvito'));
+    document.getElementById('btnTornaInvito2').addEventListener('click',      () => mostraCard('cardInvito'));
+
+    // ── Toggle password visibilità (login) ───────────────────────
+    document.getElementById('togglePass').addEventListener('click', () => {
+      const inp  = document.getElementById('password');
+      const icon = document.getElementById('iconOcchio');
+      const mostra = inp.type === 'password';
+      inp.type = mostra ? 'text' : 'password';
+      icon.innerHTML = mostra
+        ? `<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>`
+        : `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    });
+
+    // ── Indicatore forza password (riutilizzabile) ───────────────
+    function aggiornaForzaPassword(inputEl, barre, testoEl) {
+      const v = inputEl.value;
+      let score = 0;
+      if (v.length >= 8)          score++;
+      if (/[A-Z]/.test(v))        score++;
+      if (/[0-9]/.test(v))        score++;
+      if (/[^a-zA-Z0-9]/.test(v)) score++;
+      const colori  = ['', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
+      const testi   = ['', 'Troppo debole', 'Debole', 'Buona', 'Ottima'];
+      const tColori = ['', 'text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-600'];
+      barre.forEach((b, i) => {
+        b.className = `h-1 rounded ${i < score ? colori[score] : 'bg-gray-200'}`;
+      });
+      testoEl.textContent = score > 0 ? testi[score] : '';
+      testoEl.className   = `text-xs mt-1 ${tColori[score]}`;
+    }
+
+    function aggiornaMatchPassword(pass1El, pass2El, testoEl) {
+      if (!pass2El.value) { testoEl.classList.add('hidden'); return; }
+      testoEl.classList.remove('hidden');
+      if (pass2El.value === pass1El.value) {
+        testoEl.textContent = '✓ Le password coincidono';
+        testoEl.className   = 'text-xs mt-1 text-green-600';
+      } else {
+        testoEl.textContent = '✗ Le password non coincidono';
+        testoEl.className   = 'text-xs mt-1 text-red-500';
+      }
+    }
+
+    // Registrazione pubblica
+    document.getElementById('regPassword').addEventListener('input', function() {
+      aggiornaForzaPassword(this,
+        [1,2,3,4].map(i => document.getElementById(`regBarra${i}`)),
+        document.getElementById('regForzaTesto'));
+    });
+    document.getElementById('regPassword2').addEventListener('input', function() {
+      aggiornaMatchPassword(document.getElementById('regPassword'), this, document.getElementById('regMatchTesto'));
+    });
+
+    // Registrazione con invito
+    document.getElementById('regInvitoPassword2').addEventListener('input', function() {
+      aggiornaMatchPassword(document.getElementById('regInvitoPassword'), this, document.getElementById('regInvitoMatchTesto'));
+    });
+
+    // ── Helper submit generico ───────────────────────────────────
+    function setLoading(btn, spinner, testo, testoLabel, isLoading) {
+      btn.disabled = isLoading;
+      spinner.classList.toggle('hidden', !isLoading);
+      testo.textContent = isLoading ? testoLabel : testo.dataset.orig;
+    }
+
+    // ── Form login ───────────────────────────────────────────────
+    document.getElementById('formLogin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('btnLogin');
+      const spinner  = document.getElementById('btnSpinner');
+      const testoEl  = document.getElementById('btnTesto');
+      const errBox   = document.getElementById('erroreBox');
+
+      errBox.classList.add('hidden');
+      if (!email || !password) { mostraErroreCard('erroreBox', 'Inserisci email e password.', 'cardLogin'); return; }
+
+      btn.disabled = true; spinner.classList.remove('hidden'); testoEl.textContent = 'Accesso…';
+      try {
+        const res  = await fetch(BASE_URL + '/api/auth.php?azione=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, csrf_token: window._csrfLogin }),
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!data.successo) { mostraErroreCard('erroreBox', data.errore || 'Credenziali non valide.', 'cardLogin'); return; }
+        redirectDopoLogin(data.dati);
+      } catch(_) {
+        mostraErroreCard('erroreBox', 'Errore di connessione. Riprova.', 'cardLogin');
+      } finally {
+        btn.disabled = false; spinner.classList.add('hidden'); testoEl.textContent = 'Accedi';
+      }
+    });
+
+    // ── Form registrazione pubblica ──────────────────────────────
+    document.getElementById('formRegistrazione').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome  = document.getElementById('regNome').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass  = document.getElementById('regPassword').value;
+      const pass2 = document.getElementById('regPassword2').value;
+      const btn   = document.getElementById('btnRegistra');
+      const spin  = document.getElementById('btnRegistraSpinner');
+      const testo = document.getElementById('btnRegistraTesto');
+      const errEl = document.getElementById('regErrore');
+      const okEl  = document.getElementById('regSuccesso');
+
+      errEl.classList.add('hidden'); okEl.classList.add('hidden');
+      if (!nome || !email || !pass || !pass2) { errEl.textContent = 'Tutti i campi sono obbligatori.'; errEl.classList.remove('hidden'); return; }
+      if (pass !== pass2) { errEl.textContent = 'Le password non coincidono.'; errEl.classList.remove('hidden'); return; }
+
+      btn.disabled = true; spin.classList.remove('hidden'); testo.textContent = 'Creazione…';
+      try {
+        const csrfRes  = await fetch(BASE_URL + '/api/auth.php?azione=csrf');
+        const csrfData = await csrfRes.json();
+        const res = await fetch(BASE_URL + '/api/auth.php?azione=registrazione', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, password: pass, password_conferma: pass2, ...prefsDaForm('reg'), csrf_token: csrfData.dati?.csrf_token }),
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!data.successo) { errEl.textContent = data.errore || 'Errore durante la registrazione.'; errEl.classList.remove('hidden'); return; }
+        // Login automatico dopo registrazione
+        redirectDopoLogin(data.dati);
+      } catch(_) {
+        errEl.textContent = 'Errore di connessione. Riprova.'; errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; spin.classList.add('hidden'); testo.textContent = 'Crea account';
+      }
+    });
+
+    // ── Form login con token invito ──────────────────────────────
+    document.getElementById('formLoginInvito').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email    = document.getElementById('loginInvitoEmail').value.trim();
+      const password = document.getElementById('loginInvitoPassword').value;
+      const btn      = document.getElementById('btnLoginInvito');
+      const spin     = document.getElementById('btnLoginInvitoSpinner');
+      const testo    = document.getElementById('btnLoginInvitoTesto');
+      const errEl    = document.getElementById('loginInvitoErrore');
+
+      errEl.classList.add('hidden');
+      if (!email || !password) { errEl.textContent = 'Inserisci email e password.'; errEl.classList.remove('hidden'); return; }
+
+      btn.disabled = true; spin.classList.remove('hidden'); testo.textContent = 'Accesso…';
+      try {
+        // 1. Login
+        const resLogin = await fetch(BASE_URL + '/api/auth.php?azione=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, csrf_token: window._csrfLogin }),
+          credentials: 'same-origin',
+        });
+        const dataLogin = await resLogin.json();
+        if (!dataLogin.successo) { errEl.textContent = dataLogin.errore || 'Credenziali non valide.'; errEl.classList.remove('hidden'); return; }
+
+        // 2. Accetta invito
+        const resInvito = await fetch(BASE_URL + '/api/auth.php?azione=accetta_invito', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenInvito, csrf_token: dataLogin.dati.csrf_token }),
+          credentials: 'same-origin',
+        });
+        const dataInvito = await resInvito.json();
+        // Usa i dati aggiornati se disponibili, altrimenti quelli del login
+        redirectDopoLogin(dataInvito.successo ? dataInvito.dati : dataLogin.dati);
+      } catch(_) {
+        errEl.textContent = 'Errore di connessione. Riprova.'; errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; spin.classList.add('hidden'); testo.textContent = 'Accedi e unisciti';
+      }
+    });
+
+    // ── Form registrazione con token invito ──────────────────────
+    document.getElementById('formRegistrazioneInvito').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome  = document.getElementById('regInvitoNome').value.trim();
+      const email = document.getElementById('regInvitoEmail').value.trim();
+      const pass  = document.getElementById('regInvitoPassword').value;
+      const pass2 = document.getElementById('regInvitoPassword2').value;
+      const btn   = document.getElementById('btnRegistraInvito');
+      const spin  = document.getElementById('btnRegistraInvitoSpinner');
+      const testo = document.getElementById('btnRegistraInvitoTesto');
+      const errEl = document.getElementById('regInvitoErrore');
+
+      errEl.classList.add('hidden');
+      if (!nome || !email || !pass || !pass2) { errEl.textContent = 'Tutti i campi sono obbligatori.'; errEl.classList.remove('hidden'); return; }
+      if (pass !== pass2) { errEl.textContent = 'Le password non coincidono.'; errEl.classList.remove('hidden'); return; }
+
+      btn.disabled = true; spin.classList.remove('hidden'); testo.textContent = 'Creazione…';
+      try {
+        const csrfRes  = await fetch(BASE_URL + '/api/auth.php?azione=csrf');
+        const csrfData = await csrfRes.json();
+        const res = await fetch(BASE_URL + '/api/auth.php?azione=registrazione', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, password: pass, password_conferma: pass2, token_invito: tokenInvito, ...prefsDaForm('regInvito'), csrf_token: csrfData.dati?.csrf_token }),
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!data.successo) { errEl.textContent = data.errore || 'Errore durante la registrazione.'; errEl.classList.remove('hidden'); return; }
+
+        // Dopo la registrazione: login automatico per ottenere la sessione
+        testo.textContent = 'Accesso in corso…';
+        const resLogin = await fetch(BASE_URL + '/api/auth.php?azione=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass, csrf_token: csrfData.dati?.csrf_token }),
+          credentials: 'same-origin',
+        });
+        const dataLogin = await resLogin.json();
+        if (!dataLogin.successo) { errEl.textContent = 'Registrazione ok, ma login fallito. Accedi manualmente.'; errEl.classList.remove('hidden'); return; }
+
+        // Accetta invito subito dopo il login
+        testo.textContent = 'Unione alla casa…';
+        const resInvito = await fetch(BASE_URL + '/api/auth.php?azione=accetta_invito', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenInvito, csrf_token: dataLogin.dati.csrf_token }),
+          credentials: 'same-origin',
+        });
+        const dataInvito = await resInvito.json();
+        redirectDopoLogin(dataInvito.successo ? { ...dataLogin.dati, case: dataInvito.dati.case } : dataLogin.dati);
+      } catch(_) {
+        errEl.textContent = 'Errore di connessione. Riprova.'; errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; spin.classList.add('hidden'); testo.textContent = 'Crea account e unisciti';
+      }
+    });
+
+    // ── Accetta invito (utente già loggato) ──────────────────────
+    document.getElementById('btnAccettaInvito').addEventListener('click', async () => {
+      const btn   = document.getElementById('btnAccettaInvito');
+      const spin  = document.getElementById('btnAccettaSpinner');
+      const testo = document.getElementById('btnAccettaTesto');
+      const errEl = document.getElementById('invitoErrore');
+
+      errEl.classList.add('hidden');
+      btn.disabled = true; spin.classList.remove('hidden'); testo.textContent = 'Unione in corso…';
+      try {
+        const csrfToken = sessionStorage.getItem('csrf_token');
+        const res = await fetch(BASE_URL + '/api/auth.php?azione=accetta_invito', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: tokenInvito, csrf_token: csrfToken }),
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!data.successo) { errEl.textContent = data.errore || 'Errore.'; errEl.classList.remove('hidden'); return; }
+        redirectDopoLogin(data.dati);
+      } catch(_) {
+        errEl.textContent = 'Errore di connessione. Riprova.'; errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false; spin.classList.add('hidden'); testo.textContent = 'Unisciti alla casa';
+      }
+    });
+  </script>
+</body>
+</html>

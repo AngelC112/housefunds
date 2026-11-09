@@ -1,0 +1,63 @@
+# ============================================================
+# HouseFunds - Apache configuration
+# Works in the web root or in any subfolder (no RewriteBase needed).
+# ============================================================
+
+Options -Indexes
+DirectoryIndex index.html
+
+# ── Force HTTPS (uncomment once a certificate is installed) ──
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP:X-Forwarded-Proto} !https
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── Block sensitive files ─────────────────────────────────────
+<FilesMatch "\.(sql|log|env|md|sh|lock|dist)$|^composer\.json$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order Allow,Deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# ── Block internal folders ────────────────────────────────────
+# data/ holds config.php, logs and temporary files; it also has its own .htaccess
+RedirectMatch 403 (^|/)(data|db|vendor|docker)(/|$)
+
+# ── MIME types ───────────────────────────────────────────────
+<IfModule mod_mime.c>
+  AddType application/javascript          .js
+  AddType text/css                        .css
+  AddType application/json               .json
+  AddType image/svg+xml                  .svg
+  AddType application/manifest+json      .webmanifest
+</IfModule>
+
+# ── Static asset caching ─────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                  "access plus 1 month"
+  ExpiresByType application/javascript    "access plus 1 month"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/jpeg                "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType application/manifest+json "access plus 1 week"
+</IfModule>
+
+# ── Compression ──────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json text/plain
+</IfModule>
+
+# ── Security headers ─────────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header unset X-Powered-By
+</IfModule>
+
+AddDefaultCharset UTF-8

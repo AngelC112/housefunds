@@ -1,0 +1,477 @@
+/* ============================================================
+   STYLE.CSS - Stili globali aggiuntivi
+   Complementa Tailwind CDN
+   ============================================================ */
+
+/* ── Font system ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Safe area iPhone notch / home bar ───────────────────── */
+nav.fixed {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+main {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Scrollbar sottile ───────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* ── Input date placeholder su Safari/iOS ────────────────── */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #374151;
+}
+input[type="date"]:required:invalid::-webkit-datetime-edit {
+  color: #9ca3af;
+}
+
+/* ── Color input ─────────────────────────────────────────── */
+input[type="color"] {
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+/* ── Tabella pivot scrollabile su mobile ─────────────────── */
+#tabellaPivot {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#tabellaPivot table {
+  min-width: 500px;
+}
+
+#tabellaPivot th,
+#tabellaPivot td {
+  white-space: nowrap;
+}
+
+/* ── Animazione fade-in per tab ──────────────────────────── */
+.tab-panel.active {
+  animation: fadeIn .2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Toast notifica (usabile via JS) ─────────────────────── */
+#toast {
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1e293b;
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Skeleton loader ─────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── KPI card hover su desktop ───────────────────────────── */
+@media (hover: hover) {
+  #kpiCards > div:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+    transition: box-shadow .2s, transform .2s;
+  }
+}
+
+/* ── Bottom nav active dot ───────────────────────────────── */
+.nav-item.active .nav-icon {
+  color: #4f46e5;
+}
+
+/* ── Form input mobile: font-size 16px evita zoom su iOS ─── */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* ── Print: nascondi nav e header per export PDF browser ─── */
+@media print {
+  header, nav, button, #filtriBar { display: none !important; }
+  body { background: #fff; }
+  main { padding: 0; }
+}
+
+
+/* ── Overlay globale (mostrato durante chiamate API) ──────── */
+.app-loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: rgba(99, 102, 241, 0.15);  /* sfondo leggero così è visibile anche fermo */
+    z-index: 99999;  /* sopra tutto */
+    pointer-events: none;
+}
+.app-loading-overlay::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+    animation: loadingBar 1.2s linear infinite;
+}
+.app-loading-overlay.hidden { display: none; }
+
+@keyframes loadingBar {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+}
+
+/* ── Spinner generico (usato dentro le sezioni) ──────────── */
+.spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(99, 102, 241, 0.2);
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.spinner-small {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+.spinner-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #6b7280;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 13px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Skeleton placeholder ─────────────────────────────────── */
+.skeleton {
+    background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.4s ease infinite;
+    border-radius: 6px;
+}
+@keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   Paginazione smart + sticky mobile
+   ============================================================ */
+.paginazione-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 12px;
+    margin-top: 12px;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+}
+
+.pag-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.pag-btn:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+.pag-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.pag-btn-active {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #ffffff;
+}
+.pag-btn-active:hover {
+    background: #4338ca !important;
+    border-color: #4338ca !important;
+}
+.pag-ellipsis {
+    padding: 0 6px;
+    color: #9ca3af;
+    user-select: none;
+}
+.pag-info {
+    margin-left: auto;
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+/* ── Mobile: barra paginazione sticky in basso ──────────── */
+@media (max-width: 768px) {
+    .paginazione-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 30;
+        margin-top: 0;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid #e5e7eb;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .pag-btn {
+        min-width: 40px;
+        height: 40px;
+        font-size: 15px;
+    }
+    .pag-info {
+        flex-basis: 100%;
+        text-align: center;
+        margin: 4px 0 0 0;
+        order: -1;
+    }
+}
+
+/* Spazio extra in fondo alla lista per non finire sotto la barra sticky */
+@media (max-width: 768px) {
+    #listaSpese { padding-bottom: 80px; }
+}
+/* ── Bottoni azioni spese (Modifica / Elimina) ───────────── */
+.btn-modifica-spesa,
+.btn-elimina-spesa,
+.btn-modifica-utente,
+.btn-elimina-utente {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all .15s ease;
+    flex-shrink: 0;
+}
+.btn-modifica-spesa:hover,
+.btn-modifica-utente:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+.btn-elimina-spesa,
+.btn-elimina-utente {
+    color: #dc2626;
+}
+.btn-elimina-spesa:hover,
+.btn-elimina-utente:hover {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+/* Riga spesa: assicura layout flex con spazio per i bottoni */
+.spesa-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    background: #ffffff;
+}
+.spesa-row .flex-1 { flex: 1; min-width: 0; }
+/* ── Barra totali sotto lista spese ──────────────────────── */
+.totali-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+.totali-bar.hidden { display: none; }
+.totale-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.totale-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #6b7280;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+.totale-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+@media (max-width: 640px) {
+    .totali-bar { grid-template-columns: repeat(2, 1fr); }
+    .totale-value { font-size: 14px; }
+}
+
+
+/* ── Barra ordinamento spese ─────────────────────────────── */
+.sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    flex-wrap: wrap;
+}
+.sort-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #6b7280;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+.sort-select {
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+}
+.sort-dir-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sort-dir-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+.sort-dir-btn[data-order="asc"] .sort-dir-icon {
+    transform: rotate(180deg);
+}
+.sort-dir-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-weight: 700;
+}
+@media (max-width: 640px) {
+    .sort-bar { gap: 6px; padding: 6px; }
+    .sort-label { display: none; }
+}
+
+/* ── Pivot tree ─────────────────────────────────────────── */
+.pivot-header { padding: 12px; border-bottom: 1px solid #e5e7eb; background: #f8fafc; }
+.pivot-tree { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pivot-tree th, .pivot-tree td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
+.pivot-th-label { text-align: left; font-weight: 600; color: #374151; background: #f8fafc; }
+.pivot-th-num { text-align: right; font-weight: 600; color: #374151; background: #f8fafc; min-width: 90px; }
+.pivot-th-totale, .pivot-td-totale { background: #eef2ff !important; color: #4338ca; font-weight: 700; }
+.pivot-td-label { display: flex; align-items: center; gap: 6px; }
+.pivot-td-num { text-align: right; font-variant-numeric: tabular-nums; color: #374151; }
+.pivot-lvl-0 .pivot-label { font-weight: 700; color: #111827; }
+.pivot-lvl-1 .pivot-label { font-weight: 600; color: #374151; }
+.pivot-lvl-2 .pivot-label { font-weight: 400; color: #6b7280; }
+.pivot-lvl-0 { background: #fafbff; }
+.pivot-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px; height: 18px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #4f46e5;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.pivot-toggle:hover { background: #eef2ff; border-color: #4f46e5; }
+.pivot-bullet { width: 18px; text-align: center; color: #d1d5db; font-size: 10px; }
+.pivot-row-totale td {
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-top: 2px solid #4338ca;
+}
+@media (max-width: 768px) {
+    .pivot-tree th, .pivot-tree td { padding: 6px 8px; font-size: 12px; }
+    .pivot-th-num { min-width: 70px; }
+}
+.pivot-row-entrata { background: rgba(240, 253, 244, 0.4); }
+.pivot-row-uscita  { background: rgba(254, 242, 242, 0.4); }
+.pivot-row-saldo   { background: #f3f4f6; }

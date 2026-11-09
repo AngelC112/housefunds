@@ -1,0 +1,15 @@
+# Runtime data: configuration with passwords, database, logs
+/data/
+/app/data/*
+!/app/data/.htaccess
+
+# Composer dependencies (installed in the Docker image / release zip)
+/app/vendor/
+
+# Local environment
+.env
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

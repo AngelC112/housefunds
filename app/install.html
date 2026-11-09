@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="robots" content="noindex">
+  <title>Installazione</title>
+  <!-- Multilingua: deve precedere gli altri script -->
+  <script src="assets/i18n.js?v=3"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); min-height: 100vh; }
+    .card { box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    input:focus, select:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .campo { width: 100%; border: 1px solid #d1d5db; border-radius: .5rem; padding: .6rem .8rem; font-size: .875rem; color: #1f2937; background: #fff; }
+    .etichetta { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .25rem; }
+    .btn-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+    .btn-primary:disabled { opacity: .6; }
+  </style>
+</head>
+<body class="flex items-start justify-center p-4 py-10">
+  <div class="fixed top-3 right-3 z-50">
+    <select id="selLinguaPagina" data-noi18n aria-label="Lingua"
+      class="text-sm bg-white/90 border border-white/60 rounded-lg px-2 py-1 shadow"></select>
+  </div>
+
+  <div class="w-full max-w-lg">
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-white" data-noi18n>HouseFunds</h1>
+      <p class="text-white/70 text-sm mt-1">Installazione</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-8 card" id="cardCaricamento">
+      <p class="text-sm text-gray-500">Caricamento…</p>
+    </div>
+
+    <!-- Già installata -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardInstallata">
+      <h2 class="text-xl font-semibold text-gray-800 mb-3">Applicazione già installata</h2>
+      <p class="text-sm text-gray-600 mb-6">La configurazione esiste già. Per reinstallare elimina il file di configurazione.</p>
+      <a href="index.html" class="btn-primary block text-center text-white font-semibold rounded-lg px-4 py-3">Vai all'accesso</a>
+    </div>
+
+    <!-- Modulo -->
+    <form class="bg-white rounded-2xl p-8 card hidden" id="cardModulo" novalidate>
+      <h2 class="text-xl font-semibold text-gray-800 mb-1">Configura l'applicazione</h2>
+      <p class="text-sm text-gray-500 mb-6">Inserisci i dati del database. Le tabelle vengono create automaticamente.</p>
+
+      <div id="avvisi" class="hidden bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 mb-4"></div>
+
+      <h3 class="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Database</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="sm:col-span-2">
+          <label class="etichetta" for="dbDriver">Tipo di database</label>
+          <select id="dbDriver" class="campo">
+            <option value="mysql">MySQL / MariaDB</option>
+            <option value="pgsql">PostgreSQL</option>
+          </select>
+        </div>
+        <div>
+          <label class="etichetta" for="dbHost">Host</label>
+          <input id="dbHost" class="campo" value="localhost" autocomplete="off">
+        </div>
+        <div>
+          <label class="etichetta" for="dbPort">Porta</label>
+          <input id="dbPort" class="campo" inputmode="numeric" placeholder="3306" autocomplete="off">
+        </div>
+        <div>
+          <label class="etichetta" for="dbName">Nome database</label>
+          <input id="dbName" class="campo" autocomplete="off">
+        </div>
+        <div id="boxSchema" class="hidden">
+          <label class="etichetta" for="dbSchema">Schema</label>
+          <input id="dbSchema" class="campo" value="public" autocomplete="off">
+        </div>
+        <div>
+          <label class="etichetta" for="dbUser">Utente</label>
+          <input id="dbUser" class="campo" autocomplete="off">
+        </div>
+        <div>
+          <label class="etichetta" for="dbPass">Password</label>
+          <input id="dbPass" type="password" class="campo" autocomplete="new-password">
+        </div>
+      </div>
+
+      <h3 class="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Applicazione</h3>
+      <div class="grid grid-cols-1 gap-4 mb-6">
+        <div>
+          <label class="etichetta" for="appUrl">Indirizzo pubblico dell'app</label>
+          <input id="appUrl" class="campo" autocomplete="off">
+          <p class="text-xs text-gray-400 mt-1">Usato nei link delle email (inviti, reset password).</p>
+        </div>
+        <div>
+          <label class="etichetta" for="appName">Nome dell'app</label>
+          <input id="appName" class="campo" value="HouseFunds" autocomplete="off">
+        </div>
+      </div>
+
+      <h3 class="text-sm font-semibold text-indigo-600 uppercase tracking-wide mb-3">Email</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div class="sm:col-span-2">
+          <label class="etichetta" for="mailMailer">Invio email</label>
+          <select id="mailMailer" class="campo">
+            <option value="mail">Email integrata dell'hosting (PHP mail)</option>
+            <option value="smtp">Server SMTP</option>
+            <option value="log">Nessun invio (solo log)</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="etichetta" for="mailFrom">Indirizzo mittente</label>
+          <input id="mailFrom" type="email" class="campo" placeholder="noreply@example.com" autocomplete="off">
+        </div>
+        <div class="smtp hidden">
+          <label class="etichetta" for="mailHost">Server SMTP</label>
+          <input id="mailHost" class="campo" placeholder="smtp.example.com" autocomplete="off">
+        </div>
+        <div class="smtp hidden">
+          <label class="etichetta" for="mailPort">Porta</label>
+          <input id="mailPort" class="campo" inputmode="numeric" value="587" autocomplete="off">
+        </div>
+        <div class="smtp hidden">
+          <label class="etichetta" for="mailEncryption">Crittografia</label>
+          <select id="mailEncryption" class="campo">
+            <option value="tls">STARTTLS</option>
+            <option value="ssl">SSL/TLS</option>
+            <option value="none">Nessuna</option>
+          </select>
+        </div>
+        <div class="smtp hidden">
+          <label class="etichetta" for="mailUser">Utente SMTP</label>
+          <input id="mailUser" class="campo" autocomplete="off">
+        </div>
+        <div class="smtp hidden sm:col-span-2">
+          <label class="etichetta" for="mailPass">Password SMTP</label>
+          <input id="mailPass" type="password" class="campo" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div id="errore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4"></div>
+
+      <button type="submit" id="btnInstalla" class="btn-primary w-full text-white font-semibold rounded-lg px-4 py-3">Installa</button>
+    </form>
+
+    <!-- Completata -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardFatto">
+      <h2 class="text-xl font-semibold text-gray-800 mb-3">Installazione completata</h2>
+      <p class="text-sm text-gray-600 mb-6">Ora puoi registrare il tuo account.</p>
+      <a href="index.html" class="btn-primary block text-center text-white font-semibold rounded-lg px-4 py-3">Vai all'accesso</a>
+    </div>
+
+    <!-- Configurazione da creare a mano -->
+    <div class="bg-white rounded-2xl p-8 card hidden" id="cardManuale">
+      <h2 class="text-xl font-semibold text-gray-800 mb-3">Crea il file di configurazione</h2>
+      <p class="text-sm text-gray-600 mb-2">Le tabelle sono state create, ma la cartella dei dati non è scrivibile. Crea questo file con il contenuto qui sotto:</p>
+      <p class="text-xs font-mono bg-gray-100 rounded px-2 py-1 mb-3 break-all" id="percorsoConfig" data-noi18n></p>
+      <textarea id="testoConfig" class="campo font-mono text-xs h-56" readonly></textarea>
+      <a href="index.html" class="btn-primary block text-center text-white font-semibold rounded-lg px-4 py-3 mt-6">Fatto, vai all'accesso</a>
+    </div>
+  </div>
+
+  <script>
+    const API = 'api/install.php';
+    const $ = (id) => document.getElementById(id);
+
+    function mostra(id) {
+      ['cardCaricamento', 'cardInstallata', 'cardModulo', 'cardFatto', 'cardManuale']
+        .forEach(c => $(c).classList.toggle('hidden', c !== id));
+    }
+
+    // Lingua della pagina
+    const selLingua = $('selLinguaPagina');
+    selLingua.innerHTML = Object.entries(I18N.LINGUE).map(([k, v]) => `<option value="${k}">🌐 ${v}</option>`).join('');
+    selLingua.value = I18N.lingua;
+    selLingua.addEventListener('change', () => I18N.cambiaLinguaPagina(selLingua.value));
+
+    // Campi dipendenti dalle scelte
+    function aggiornaDriver() {
+      const pg = $('dbDriver').value === 'pgsql';
+      $('boxSchema').classList.toggle('hidden', !pg);
+      $('dbPort').placeholder = pg ? '5432' : '3306';
+    }
+    function aggiornaMailer() {
+      document.querySelectorAll('.smtp').forEach(el => el.classList.toggle('hidden', $('mailMailer').value !== 'smtp'));
+    }
+    $('dbDriver').addEventListener('change', aggiornaDriver);
+    $('mailMailer').addEventListener('change', aggiornaMailer);
+    $('mailEncryption').addEventListener('change', () => {
+      $('mailPort').value = $('mailEncryption').value === 'ssl' ? '465' : '587';
+    });
+
+    (async () => {
+      let stato;
+      try {
+        const res = await fetch(API + '?azione=stato', { credentials: 'same-origin' });
+        stato = (await res.json()).dati;
+      } catch (_) {
+        mostra('cardModulo');
+        $('errore').textContent = t('Errore di connessione. Riprova.');
+        $('errore').classList.remove('hidden');
+        return;
+      }
+      if (!stato || stato.installato) { mostra('cardInstallata'); return; }
+
+      // Solo i database con estensione PHP disponibile
+      [...$('dbDriver').options].forEach(o => { o.disabled = !stato.driver_disponibili.includes(o.value); });
+      if (!stato.driver_disponibili.includes($('dbDriver').value) && stato.driver_disponibili.length) {
+        $('dbDriver').value = stato.driver_disponibili[0];
+      }
+      if (!stato.mail_disponibile) $('mailMailer').value = 'log';
+
+      const avvisi = [];
+      if (!stato.driver_disponibili.length) avvisi.push(t('Nessuna estensione PDO per MySQL o PostgreSQL è installata.'));
+      if (stato.estensioni_mancanti.length) avvisi.push(t('Estensioni PHP mancanti: {0}', stato.estensioni_mancanti.join(', ')));
+      if (!stato.config_scrivibile) avvisi.push(t('La cartella dei dati non è scrivibile: alla fine dovrai creare il file di configurazione a mano.'));
+      if (avvisi.length) { $('avvisi').innerHTML = avvisi.map(a => `<p>${a}</p>`).join(''); $('avvisi').classList.remove('hidden'); }
+
+      $('appUrl').value = stato.url_rilevato || location.href.replace(/\/install\.html.*$/, '');
+      aggiornaDriver();
+      aggiornaMailer();
+      mostra('cardModulo');
+    })();
+
+    $('cardModulo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('errore');
+      const btn = $('btnInstalla');
+      err.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = t('Installazione in corso…');
+
+      const dati = {
+        db_driver: $('dbDriver').value,  db_host: $('dbHost').value.trim(), db_port: $('dbPort').value.trim(),
+        db_name:   $('dbName').value.trim(), db_schema: $('dbSchema').value.trim(),
+        db_user:   $('dbUser').value.trim(), db_pass: $('dbPass').value,
+        app_url:   $('appUrl').value.trim(), app_name: $('appName').value.trim(), lingua: I18N.lingua,
+        mail_mailer: $('mailMailer').value, mail_from_address: $('mailFrom').value.trim(),
+        mail_host: $('mailHost').value.trim(), mail_port: $('mailPort').value.trim(),
+        mail_encryption: $('mailEncryption').value, mail_username: $('mailUser').value.trim(),
+        mail_password: $('mailPass').value,
+      };
+
+      try {
+        const res  = await fetch(API + '?azione=installa', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dati), credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!data.successo) throw new Error(data.errore || t('Errore durante l\'installazione.'));
+        if (data.dati.installato) {
+          mostra('cardFatto');
+        } else {
+          $('percorsoConfig').textContent = data.dati.percorso_config;
+          $('testoConfig').value = data.dati.config_manuale;
+          mostra('cardManuale');
+        }
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = t('Installa');
+      }
+    });
+  </script>
+</body>
+</html>

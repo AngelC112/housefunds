@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>HouseFunds</title>
+  <script>
+    window.BASE_URL = (function() {
+      const p = window.location.pathname;
+      return p.substring(0, p.lastIndexOf('/') + 1).replace(/\/$/, '');
+    })();
+  </script>
+  <!-- Multilingua: deve precedere gli altri script (traduce la pagina mentre viene costruita) -->
+  <script src="assets/i18n.js?v=3"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .nav-item.active { color: #4f46e5; }
+    .nav-item.active .nav-icon { color: #4f46e5; }
+    .nav-item.active .nav-dot { display: block; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .spinner { border: 2px solid #e5e7eb; border-top-color: #4f46e5; border-radius: 50%; width: 20px; height: 20px; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .slide-up { animation: slideUp .3s ease; }
+    @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+    .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.15); }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .chip-uscita { background: #fee2e2; color: #dc2626; }
+    .chip-accredito { background: #dcfce7; color: #16a34a; }
+    .chip-privata { background: #f3f4f6; color: #6b7280; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:2px; }
+    @media(max-width:640px) { .table-scroll { overflow-x: auto; } }
+  </style>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div id="appLoading" class="app-loading-overlay hidden"></div>
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+      </svg>
+      <span class="font-bold text-gray-800 text-sm" id="appNomeTop">HouseFunds</span>
+    </div>
+	<div class="flex items-center gap-2">
+	  
+	  <select id="switchCasa"
+		onchange="cambiaCasa(this.value)"
+		class="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white max-w-[160px]">
+	  </select>
+
+	  <span class="text-xs text-gray-500 hidden sm:block" id="utenteNome"></span>
+
+	  <a id="linkAdmin"
+		href="admin.html"
+		class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1 rounded transition-colors">
+		⚙ Admin
+	  </a>
+
+	  <button onclick="logout()"
+		class="text-xs text-gray-500 hover:text-red-500 transition-colors px-2 py-1 rounded">
+		Esci
+	  </button>
+
+	</div>
+  </div>
+</header>
+
+<!-- ============================================================
+     CONTENUTO PRINCIPALE
+     ============================================================ -->
+<main class="max-w-5xl mx-auto px-4 pb-24 pt-4">
+	<div class="mb-4">
+	  <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 flex items-center justify-between">
+		
+		<div>
+		  <p class="text-xs text-indigo-500 uppercase font-semibold">Casa attiva</p>
+		  <p class="text-sm font-semibold text-indigo-900" id="nomeCasaAttiva">—</p>
+		</div>
+
+		<div id="badgeRuoloCasa"
+		  class="text-xs font-semibold px-2 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700">
+		  membro
+		</div>
+
+	  </div>
+	</div>
+  <!-- ── DASHBOARD ─────────────────────────────────────── -->
+  <section id="tab-dashboard" class="tab-panel active slide-up">
+
+    <!-- Filtri anno/mese -->
+    <div class="flex gap-2 mb-4">
+      <select id="filtroAnno" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white flex-1" onchange="caricaDashboard()"></select>
+      <select id="filtroMese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white flex-1" onchange="caricaDashboard()">
+        <option value="">Tutto l'anno</option>
+        <option value="1">Gennaio</option><option value="2">Febbraio</option>
+        <option value="3">Marzo</option><option value="4">Aprile</option>
+        <option value="5">Maggio</option><option value="6">Giugno</option>
+        <option value="7">Luglio</option><option value="8">Agosto</option>
+        <option value="9">Settembre</option><option value="10">Ottobre</option>
+        <option value="11">Novembre</option><option value="12">Dicembre</option>
+      </select>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="grid grid-cols-3 gap-3 mb-6" id="kpiCards">
+      <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <p class="text-xs text-gray-500 mb-1">Uscite</p>
+        <p class="font-bold text-red-600 text-lg" id="kpiUscite">—</p>
+        <p class="text-[11px] text-gray-400 hidden" id="kpiUsciteEventi"></p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <p class="text-xs text-gray-500 mb-1">Entrate</p>
+        <p class="font-bold text-green-600 text-lg" id="kpiEntrate">—</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <p class="text-xs text-gray-500 mb-1">Saldo</p>
+        <p class="font-bold text-lg" id="kpiSaldo">—</p>
+      </div>
+    </div>
+
+    <!-- Grafici -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Uscite per categoria</h3>
+        <div class="relative h-48"><canvas id="graficoCat"></canvas></div>
+        <p class="text-xs text-gray-400 text-center mt-2" id="noDataCat" style="display:none">Nessuna spesa</p>
+      </div>
+      <div class="bg-white rounded-xl p-4 border border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Andamento mensile</h3>
+        <div class="relative h-48"><canvas id="graficoMensile"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Ultime spese -->
+    <div class="bg-white rounded-xl border border-gray-100">
+      <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">Ultime spese</h3>
+        <button onclick="mostraTab('spese')" class="text-xs text-indigo-600 font-medium">Vedi tutte →</button>
+      </div>
+      <div id="listaUltimeSpese" class="divide-y divide-gray-50"></div>
+    </div>
+  </section>
+
+  <!-- ── SPESE ──────────────────────────────────────────── -->
+  <section id="tab-spese" class="tab-panel slide-up">
+
+    <!-- Toolbar -->
+    <div class="flex gap-2 mb-4">
+      <input type="text" id="cercaSpesa" placeholder="Cerca descrizione…"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white flex-1"
+        oninput="debounce(caricaSpese, 400)()">
+      <button onclick="apriModalSpesa()" class="bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-1 whitespace-nowrap">
+        <span class="text-lg leading-none">+</span> Nuova
+      </button>
+    </div>
+
+    <!-- Filtri -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+      <select id="filtroCatSpese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="caricaSpese()">
+        <option value="">Tutte le categorie</option>
+      </select>
+	  <select id="filtroSottocategoriaSpese" class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm" data-testid="filter-sottocategoria">
+		<option value="">Tutte le sottocategorie</option>
+	</select>
+      <select id="filtroAnnoSpese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="caricaSpese()"></select>
+      <select id="filtroMeseSpese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="caricaSpese()">
+        <option value="">Tutti i mesi</option>
+        <option value="1">Gennaio</option><option value="2">Febbraio</option>
+        <option value="3">Marzo</option><option value="4">Aprile</option>
+        <option value="5">Maggio</option><option value="6">Giugno</option>
+        <option value="7">Luglio</option><option value="8">Agosto</option>
+        <option value="9">Settembre</option><option value="10">Ottobre</option>
+        <option value="11">Novembre</option><option value="12">Dicembre</option>
+      </select>
+      <select id="filtroPrivataSpese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="caricaSpese()">
+        <option value="">Tutte</option>
+        <option value="0">Pubbliche</option>
+        <option value="1">Private 🔒</option>
+      </select>
+	  <select id="filtroPerPagina" class="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm" data-testid="filter-per-pagina">
+			<option value="25">25 / pag</option>
+			<option value="50" selected>50 / pag</option>
+			<option value="100">100 / pag</option>
+			<option value="200">200 / pag</option>
+		</select>
+		
+	  <select id="filtroEventoSpese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="caricaSpese(1)">
+	  <option value="">Tutti gli eventi</option>
+	</select>
+    </div>
+
+    <!-- Lista spese -->
+	<div class="sort-bar">
+    <label for="sortSpese" class="sort-label">Ordina per</label>
+    <select id="sortSpese" class="sort-select">
+        <option value="data">Data</option>
+        <option value="descrizione">Descrizione</option>
+        <option value="importo">Importo</option>
+        <option value="categoria">Categoria</option>
+        <option value="sottocategoria">Sottocategoria</option>
+    </select>
+    <button type="button" id="sortDirBtn" class="sort-dir-btn" data-order="desc" title="Inverti ordine">
+        <span class="sort-dir-icon">↓</span>
+        <span class="sort-dir-text">Decr.</span>
+    </button>
+</div>
+    <div id="listaSpese" class="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50"></div>
+	
+	<div id="totaliSpese" class="totali-bar hidden">
+		<div class="totale-item">
+			<span class="totale-label">Voci</span>
+			<span class="totale-value" id="totaleVoci">—</span>
+		</div>
+		<div class="totale-item">
+			<span class="totale-label">Uscite</span>
+			<span class="totale-value text-red-600" id="totaleUscite">—</span>
+		</div>
+		<div class="totale-item">
+			<span class="totale-label">Entrate</span>
+			<span class="totale-value text-green-600" id="totaleEntrate">—</span>
+		</div>
+		<div class="totale-item">
+			<span class="totale-label">Saldo</span>
+			<span class="totale-value" id="totaleSaldo">—</span>
+		</div>
+	</div>
+    <!-- Paginazione -->
+    <div id="paginazione" class="paginazione-bar"></div>
+  </section>
+
+  <!-- ── PIVOT ──────────────────────────────────────────── -->
+  <section id="tab-pivot" class="tab-panel slide-up">
+    <div class="flex gap-2 mb-4">
+      <select id="selPivot" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white flex-1" onchange="eseguiPivot()">
+        <option value="">Seleziona una pivot…</option>
+      </select>
+    </div>
+
+    <!-- Filtri pivot -->
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <select id="pivotAnno" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="eseguiPivot()"></select>
+      <select id="pivotMese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="eseguiPivot()">
+        <option value="">Tutto l'anno</option>
+        <option value="1">Gennaio</option><option value="2">Febbraio</option>
+        <option value="3">Marzo</option><option value="4">Aprile</option>
+        <option value="5">Maggio</option><option value="6">Giugno</option>
+        <option value="7">Luglio</option><option value="8">Agosto</option>
+        <option value="9">Settembre</option><option value="10">Ottobre</option>
+        <option value="11">Novembre</option><option value="12">Dicembre</option>
+      </select>
+    </div>
+
+    <div id="tabellaPivot" class="bg-white rounded-xl border border-gray-100 overflow-hidden table-scroll"></div>
+  </section>
+
+  <!-- ── IMPORT / EXPORT ────────────────────────────────── -->
+  <section id="tab-io" class="tab-panel slide-up">
+
+    <!-- Import -->
+    <div class="bg-white rounded-xl border border-gray-100 p-6 mb-4">
+      <h3 class="font-semibold text-gray-800 mb-1">Importa spese</h3>
+      <p class="text-xs text-gray-500 mb-4">Carica un file Excel (.xlsx) o CSV. Potrai mappare le colonne prima di importare.</p>
+
+      <!-- Step 1: drop zone -->
+      <div id="importStep1">
+        <div id="dropZone"
+          class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all"
+          onclick="document.getElementById('fileImport').click()"
+          ondragover="event.preventDefault(); this.classList.add('border-indigo-400','bg-indigo-50')"
+          ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
+          ondrop="handleDrop(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <p class="text-sm text-gray-500">Trascina qui o <span class="text-indigo-600 font-medium">clicca per selezionare</span></p>
+          <p class="text-xs text-gray-400 mt-1">Excel .xlsx o CSV — max 10 MB</p>
+        </div>
+        <input type="file" id="fileImport" class="hidden" accept=".xlsx,.csv" onchange="leggiFileImport(this.files[0])">
+        <div id="importLoading" class="hidden flex justify-center py-6">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: mapping colonne + anteprima -->
+      <div id="importStep2" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm font-medium text-gray-700" id="importNomeFile"></p>
+          <button onclick="resetImport()" class="text-xs text-gray-400 hover:text-red-500">✕ Annulla</button>
+        </div>
+
+        <!-- Mapping colonne -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <p class="text-xs font-semibold text-gray-600 mb-3">📋 Associa le colonne del tuo file</p>
+          <div class="grid grid-cols-2 gap-3" id="mappingColonne"></div>
+        </div>
+
+        <!-- Anteprima righe -->
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-gray-600 mb-2">👁 Anteprima (prime 5 righe)</p>
+          <div class="overflow-x-auto rounded-xl border border-gray-100">
+            <table class="w-full text-xs" id="tabellaAnteprima"></table>
+          </div>
+        </div>
+
+        <!-- Errori mapping -->
+        <div id="mappingErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-4 py-2 mb-3"></div>
+
+        <button onclick="avviaImport()" id="btnImport"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+          <span id="btnImportTesto">Importa dati</span>
+          <div id="btnImportSpinner" class="hidden spinner" style="border-color:#ffffff40;border-top-color:#fff"></div>
+        </button>
+      </div>
+
+      <!-- Step 3: risultato -->
+      <div id="importRisultato" class="hidden mt-4 text-sm rounded-lg p-4"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="bg-white rounded-xl border border-gray-100 p-6">
+      <h3 class="font-semibold text-gray-800 mb-4">Esporta spese</h3>
+
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <select id="exportAnno" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"></select>
+        <select id="exportMese" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="">Tutto l'anno</option>
+          <option value="1">Gennaio</option><option value="2">Febbraio</option>
+          <option value="3">Marzo</option><option value="4">Aprile</option>
+          <option value="5">Maggio</option><option value="6">Giugno</option>
+          <option value="7">Luglio</option><option value="8">Agosto</option>
+          <option value="9">Settembre</option><option value="10">Ottobre</option>
+          <option value="11">Novembre</option><option value="12">Dicembre</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <button onclick="esporta('csv')"
+          class="border border-gray-200 rounded-lg py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex flex-col items-center gap-1 transition-colors">
+          <span class="text-xl">📄</span> CSV
+        </button>
+        <button onclick="esporta('excel')"
+          class="border border-green-200 rounded-lg py-3 text-sm font-medium text-green-700 hover:bg-green-50 flex flex-col items-center gap-1 transition-colors">
+          <span class="text-xl">📊</span> Excel
+        </button>
+        <button onclick="esporta('pdf')"
+          class="border border-red-200 rounded-lg py-3 text-sm font-medium text-red-700 hover:bg-red-50 flex flex-col items-center gap-1 transition-colors">
+          <span class="text-xl">📋</span> PDF
+        </button>
+      </div>
+    </div>
+  </section>
+<!-- ── EVENTI ─────────────────────────────────────────── -->
+  <section id="tab-eventi" class="tab-panel slide-up">
+
+    <!-- Lista eventi -->
+    <div id="eventiLista" class="space-y-3 mb-4"></div>
+
+    <!-- Dettaglio evento (nascosto di default) -->
+    <div id="eventoDettaglio" class="hidden">
+      <button onclick="chiudiEventoDettaglio()" class="flex items-center gap-1 text-sm text-indigo-600 font-medium mb-4">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        Torna agli eventi
+      </button>
+      <div id="eventoDettaglioContent"></div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ============================================================
+     BOTTOM NAV
+     ============================================================ -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
+  <div class="max-w-5xl mx-auto px-2 flex">
+    <button onclick="mostraTab('dashboard')" class="nav-item active flex-1 flex flex-col items-center py-2 text-gray-400" id="nav-dashboard">
+      <svg class="nav-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="text-xs mt-0.5 font-medium">Dashboard</span>
+      <span class="nav-dot hidden w-1 h-1 rounded-full bg-indigo-600 mt-0.5"></span>
+    </button>
+    <button onclick="mostraTab('spese')" class="nav-item flex-1 flex flex-col items-center py-2 text-gray-400" id="nav-spese">
+      <svg class="nav-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <span class="text-xs mt-0.5 font-medium">Spese</span>
+      <span class="nav-dot hidden w-1 h-1 rounded-full bg-indigo-600 mt-0.5"></span>
+    </button>
+    <button onclick="mostraTab('pivot')" class="nav-item flex-1 flex flex-col items-center py-2 text-gray-400" id="nav-pivot">
+      <svg class="nav-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span class="text-xs mt-0.5 font-medium">Pivot</span>
+      <span class="nav-dot hidden w-1 h-1 rounded-full bg-indigo-600 mt-0.5"></span>
+    </button>
+    <button onclick="mostraTab('io')" class="nav-item flex-1 flex flex-col items-center py-2 text-gray-400" id="nav-io">
+      <svg class="nav-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span class="text-xs mt-0.5 font-medium">Import/Export</span>
+      <span class="nav-dot hidden w-1 h-1 rounded-full bg-indigo-600 mt-0.5"></span>
+    </button>
+	<button onclick="mostraTab('eventi')" class="nav-item flex-1 flex flex-col items-center py-2 text-gray-400" id="nav-eventi">
+      <svg class="nav-icon w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span class="text-xs mt-0.5 font-medium">Eventi</span>
+      <span class="nav-dot hidden w-1 h-1 rounded-full bg-indigo-600 mt-0.5"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MODAL NUOVA/MODIFICA SPESA
+     ============================================================ -->
+<div id="modalSpesa" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+  <div class="modal-overlay absolute inset-0" onclick="chiudiModalSpesa()"></div>
+  <div class="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalTitolo">Nuova spesa</h2>
+      <button onclick="chiudiModalSpesa()" class="text-gray-400 hover:text-gray-600 p-1">✕</button>
+    </div>
+
+    <div id="modalErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+
+    <form id="formSpesa" novalidate>
+      <input type="hidden" id="spesaId">
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <!-- Data -->
+        <div class="col-span-2 sm:col-span-1">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Data *</label>
+          <input type="date" id="spesaData" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
+        </div>
+        <!-- Importo -->
+        <div class="col-span-2 sm:col-span-1">
+          <label class="block text-xs font-medium text-gray-600 mb-1">Importo (€) *</label>
+          <input type="number" id="spesaImporto" step="0.01" min="0.01" placeholder="0,00"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
+        </div>
+      </div>
+
+      <!-- Categoria -->
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
+        <select id="spesaCategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="aggiornaSottocategorie()" required>
+          <option value="">Seleziona…</option>
+        </select>
+      </div>
+
+      <!-- Sottocategoria -->
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Sottocategoria</label>
+        <select id="spesaSottocategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <option value="">Nessuna</option>
+        </select>
+      </div>
+
+      <!-- Descrizione -->
+      <div class="mb-3">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+        <input type="text" id="spesaDescrizione" maxlength="255" placeholder="Es. Supermercato Esselunga…"
+          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+      </div>
+
+      <!-- Toggle privata -->
+      <div class="flex items-center gap-3 mb-5">
+        <button type="button" id="togglePrivata" onclick="togglePrivata()"
+          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200 focus:outline-none"
+          role="switch" aria-checked="false">
+          <span id="toggleThumb" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
+        </button>
+        <label class="text-sm text-gray-600 cursor-pointer" onclick="togglePrivata()">
+          Spesa privata 🔒 <span class="text-xs text-gray-400">(solo tu la vedi)</span>
+        </label>
+      </div>
+
+      <button type="submit" id="btnSalvaSpesa"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors">
+        <span id="btnSalvaTesto">Salva spesa</span>
+        <div id="btnSalvaSpinner" class="hidden spinner"></div>
+      </button>
+    </form>
+  </div>
+</div>
+<!-- Modal assegnazione spesa a evento (popup opzionale) -->
+<div id="modalAssegnaEvento" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+  <div class="modal-overlay absolute inset-0" onclick="chiudi('modalAssegnaEvento')"></div>
+  <div class="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm p-6 z-10 slide-up">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-semibold text-gray-800" id="assegnaEventoNome">🎯 Evento</h2>
+      <button onclick="chiudi('modalAssegnaEvento')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <p class="text-xs text-gray-400 mb-4">Assegna questa spesa a una voce dell'evento, oppure salta.</p>
+    <div id="assegnaMiniCatList" class="space-y-2 mb-4"></div>
+    <button onclick="chiudi('modalAssegnaEvento')"
+      class="w-full text-center text-sm text-gray-400 hover:text-gray-600 py-2">
+      Salta — non assegnare
+    </button>
+  </div>
+</div>
+<!--
+<script>
+  (function() {
+    var s = document.createElement('script');
+    s.src = window.BASE_URL + '/assets/app.js';
+    s.onerror = function() {
+      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;background:#ef4444;color:#fff;padding:12px;text-align:center;font-family:sans-serif;z-index:9999">Errore: impossibile caricare app.js dal path: ' + s.src + '</div>';
+    };
+    document.head.appendChild(s);
+  })();
+</script>
+-->
+<!-- Modal Evento (condivisa con admin) -->
+<div id="modalEvento" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="modal-overlay absolute inset-0" onclick="chiudiModalEvento()"></div>
+  <div class="relative bg-white rounded-2xl w-full max-w-lg p-6 z-10 slide-up max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="font-semibold text-gray-800" id="modalEventoTitolo">Modifica evento</h2>
+      <button onclick="chiudiModalEvento()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="eventoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
+    <input type="hidden" id="eventoId">
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <input type="text" id="eventoNome" maxlength="255" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+      <input type="text" id="eventoDescrizione" maxlength="500" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="mb-4 flex items-center gap-3">
+      <label class="text-xs font-medium text-gray-600">Colore</label>
+      <input type="color" id="eventoColore" value="#4f46e5" class="h-9 w-16 border border-gray-200 rounded-lg cursor-pointer">
+    </div>
+    <div class="border-t pt-4 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-medium text-gray-600">Mini-categorie</span>
+        <button onclick="aggiungiMiniCategoria()" class="text-xs text-indigo-600 font-medium hover:underline">+ Aggiungi</button>
+      </div>
+      <div id="miniCatList" class="space-y-2"></div>
+    </div>
+    <div class="border-t pt-4 mb-5">
+      <p class="text-xs font-medium text-gray-600 mb-2">Categorie e sottocategorie che attivano la popup</p>
+      <p class="text-xs text-gray-400 mb-2">Spunta una categoria per collegarla per intero (puoi poi togliere singole sottocategorie), oppure apri la categoria con ▸ e scegli solo le sottocategorie che ti servono. I puntini colorati indicano altri eventi già collegati.</p>
+      <div id="subcatLinkList" class="space-y-0.5 max-h-72 overflow-y-auto border border-gray-100 rounded-lg p-1"></div>
+      <div id="subcatLinkRiepilogo" class="flex flex-wrap gap-1.5 mt-2"></div>
+    </div>
+    <button onclick="salvaEvento()" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl text-sm">Salva evento</button>
+  </div>
+</div>
+<script src="assets/eventi_shared.js?v=4" defer></script>
+<script src="assets/app.js?v=6" defer></script>
+</body>
+</html>

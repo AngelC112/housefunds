@@ -1,0 +1,41 @@
+# ============================================================
+# HouseFunds - minimal setup
+#
+#   docker compose up -d      then open http://localhost:8080
+#
+# With no database settings the container starts its own MariaDB
+# and generates the password on the first start. Everything is
+# stored in ./data: back up that folder.
+#
+# Optional settings (APP_URL, SMTP, external database) are listed in
+# .env.example: uncomment them below or put them in a .env file.
+# ============================================================
+services:
+  housefunds:
+    image: ghcr.io/angelc112/housefunds:latest
+    # build: .              # use this instead of "image" to build from the sources
+    container_name: housefunds
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./data:/data
+    environment:
+      # Public address, used in email links (recommended)
+      # APP_URL: "https://expenses.example.com"
+      # APP_TIMEZONE: "Europe/Rome"
+
+      # SMTP server (without it emails are only written to data/logs)
+      # MAIL_HOST: "smtp.example.com"
+      # MAIL_PORT: "587"
+      # MAIL_USERNAME: "noreply@example.com"
+      # MAIL_PASSWORD: "change-me"
+
+      # External database instead of the embedded one
+      # DB_DRIVER: "pgsql"          # mysql | pgsql
+      # DB_HOST: "192.0.2.10"
+      # DB_PORT: "5432"
+      # DB_NAME: "housefunds"
+      # DB_USER: "housefunds"
+      # DB_PASS: "change-me"
+      # DB_SCHEMA: "public"         # PostgreSQL only
