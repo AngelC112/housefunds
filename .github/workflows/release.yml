@@ -21,9 +21,15 @@ jobs:
           extensions: gd, zip, intl, mbstring
           tools: composer:v2
 
+      # composer.lock is resolved for the Docker image (PHP 8.3). The zip must
+      # also run on hostings with PHP 8.2, so the dependencies are resolved
+      # again for that platform (e.g. zipstream-php 3.2 needs PHP 8.3).
       - name: Install dependencies
         working-directory: app
-        run: composer install --no-dev --no-interaction --no-progress --optimize-autoloader
+        run: |
+          composer config platform.php 8.2.0
+          composer update --no-dev --no-interaction --no-progress --optimize-autoloader
+          composer config --unset platform
 
       - name: Build zip
         run: |
