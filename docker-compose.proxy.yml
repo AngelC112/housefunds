@@ -1,0 +1,25 @@
+# HouseFunds - optional: reachable only through a reverse proxy.
+#
+# The default setup publishes the site on a port of the host
+# (http://<host>:8080). With this file the port is not published at all:
+# the container joins a Docker network shared with your reverse proxy
+# (Nginx Proxy Manager, Traefik, Caddy...) and only the proxy can reach it.
+#
+#   docker network create proxy        # once, if the network does not exist
+#   docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+#
+# Then point the proxy to http://housefunds:80 (the proxy container must be
+# on the same network). Requires Docker Compose 2.24 or newer.
+#
+# PROXY_NETWORK: name of the shared network (default "proxy").
+services:
+  housefunds:
+    ports: !reset []
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}

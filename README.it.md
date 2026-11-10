@@ -46,6 +46,33 @@ Fai il backup dell'intera cartella `data`.
 Incolla [docker-compose.yml](docker-compose.yml) come app personalizzata / stack.
 Collega un dataset o una cartella persistente a `/data` e la porta web a `80`.
 
+### Porta diretta o reverse proxy
+
+Funzionano entrambi i modi, scegline uno:
+
+- **Porta diretta** (predefinito): il sito risponde su `http://<host>:8080`.
+  Non serve altro. Va bene su una rete fidata o per una prima prova; per
+  l'uso reale metti davanti un proxy con HTTPS.
+- **Solo attraverso un reverse proxy**: la porta non viene pubblicata e solo
+  il proxy raggiunge il container, su una rete Docker condivisa:
+
+  ```bash
+  docker network create proxy
+  curl -O https://raw.githubusercontent.com/AngelC112/housefunds/main/docker-compose.proxy.yml
+  docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+  ```
+
+  Punta il proxy a `http://housefunds:80` e imposta `APP_URL` con l'indirizzo
+  pubblico `https://`. Dove si incolla un solo YAML (TrueNAS, Portainer),
+  togli le righe `ports:`, aggiungi `networks: [default, proxy]` al servizio
+  e questo blocco in fondo:
+
+  ```yaml
+  networks:
+    proxy:
+      external: true
+  ```
+
 ### Impostazioni consigliate
 
 Sotto `environment:` nel file compose:

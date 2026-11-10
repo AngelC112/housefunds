@@ -46,6 +46,33 @@ Back up the whole `data` folder.
 Paste [docker-compose.yml](docker-compose.yml) as a custom app / stack. Map a
 persistent dataset or folder to `/data` and the web port to `80`.
 
+### Direct port or reverse proxy
+
+Both ways work, pick one:
+
+- **Direct port** (default): the site answers on `http://<host>:8080`. Nothing
+  else to set up. Use it on a trusted network or for a first try; for real
+  use put a proxy with HTTPS in front.
+- **Only through a reverse proxy**: the port is not published and only the
+  proxy can reach the container, over a shared Docker network:
+
+  ```bash
+  docker network create proxy
+  curl -O https://raw.githubusercontent.com/AngelC112/housefunds/main/docker-compose.proxy.yml
+  docker compose -f docker-compose.yml -f docker-compose.proxy.yml up -d
+  ```
+
+  Point the proxy to `http://housefunds:80` and set `APP_URL` to the public
+  `https://` address. Where you paste a single YAML (TrueNAS, Portainer),
+  remove the `ports:` lines, add `networks: [default, proxy]` to the service
+  and this block at the end:
+
+  ```yaml
+  networks:
+    proxy:
+      external: true
+  ```
+
 ### Recommended settings
 
 Set them under `environment:` in the compose file:
