@@ -7,6 +7,7 @@ error_reporting(0);
 // PIVOT.PHP - Dashboard KPI + Pivot configurabili (multi-casa)
 // ============================================================
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/ricorrenti_gen.php';
 inizializzaAPI();
 
 set_error_handler(function ($severity, $message, $file, $line) {
@@ -101,6 +102,9 @@ function dashboard(): void {
     rilasciaSessione();
     $isAdmin = checkPermesso($utente['id'], $casaId );//, 'admin');
     $db      = getDB();
+
+    // La dashboard è la prima vista all'apertura: genera qui le ricorrenti scadute.
+    generaRicorrenzeScadute($db, $casaId);
 
     [$privacySQL, $privacyParams] = wherePrivacy($isAdmin, $utente['id']);
 

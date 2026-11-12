@@ -851,6 +851,8 @@ function eseguiEliminazioneAccount(int $uid, string $email, \PDO $db): array {
     // 4. Appartenenze e sessioni
     $db->prepare("DELETE FROM utenti_case WHERE utente_id = ?")->execute([$uid]);
     $db->prepare("DELETE FROM sessioni WHERE id_utente = ?")->execute([$uid]);
+    // Ricorrenze dell'utente nelle case condivise: le spese già generate restano
+    $db->prepare("DELETE FROM spese_ricorrenti WHERE id_utente = ?")->execute([$uid]);
 
     // 5. Spese rimaste in case condivise? Allora anonimizza, altrimenti elimina la riga
     $stmt = $db->prepare("SELECT COUNT(*) FROM spese WHERE id_utente = ?");

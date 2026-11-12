@@ -7,6 +7,7 @@ error_reporting(0);
 // SPESE.PHP - CRUD Spese (multi-casa)
 // ============================================================
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/ricorrenti_gen.php';
 inizializzaAPI();
 
 $metodo = $_SERVER['REQUEST_METHOD'];
@@ -26,6 +27,9 @@ function lista(): void {
     [$utente, $casaId] = richiedeAccessoCasa();
     $isAdmin = checkPermesso($utente['id'], $casaId);//, 'admin');
     $db      = getDB();
+
+    // Materializza le scadenze arretrate delle spese ricorrenti (generazione pigra).
+    generaRicorrenzeScadute($db, $casaId);
 
     $dove   = ['s.casa_id = ?'];
     $params = [$casaId];
@@ -140,7 +144,7 @@ function lista(): void {
 
     $sql = "
         SELECT
-            s.id, s.data_spesa, s.descrizione, s.importo, s.privata,
+            s.id, s.data_spesa, s.descrizione, s.importo, s.privata, s.id_ricorrenza,
             s.creato_il, s.modificato_il,
             c.id AS categoria_id, c.nome AS categoria, c.tipo AS categoria_tipo, c.colore AS categoria_colore,
             sc.id AS sottocategoria_id, sc.nome AS sottocategoria,
@@ -165,8 +169,9 @@ function lista(): void {
     $spese = $stmt->fetchAll();
 
     foreach ($spese as &$s) {
-        $s['importo'] = (float)$s['importo'];
-        $s['privata'] = (bool)$s['privata'];
+        $s['importo']       = (float)$s['importo'];
+        $s['privata']       = (bool)$s['privata'];
+        $s['id_ricorrenza'] = $s['id_ricorrenza'] !== null ? (int)$s['id_ricorrenza'] : null;
     }
 
     risposta([

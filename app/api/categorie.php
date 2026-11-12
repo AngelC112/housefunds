@@ -149,6 +149,11 @@ function eliminaCategoria(int $id): void {
     if ((int)$stmt->fetchColumn() > 0) {
         rispostaErrore(409, 'Impossibile eliminare: esistono spese collegate. Disattiva la categoria.');
     }
+    $stmt = $db->prepare("SELECT COUNT(*) FROM spese_ricorrenti WHERE id_categoria = ? AND casa_id = ?");
+    $stmt->execute([$id, $casaId]);
+    if ((int)$stmt->fetchColumn() > 0) {
+        rispostaErrore(409, 'Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.');
+    }
 
     $db->prepare("DELETE FROM categorie WHERE id = ? AND casa_id = ?")->execute([$id, $casaId]);
     risposta(['messaggio' => 'Categoria eliminata.']);

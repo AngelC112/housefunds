@@ -28,6 +28,9 @@ const S = {
   graficoBar:     null,
   privataOn:      false,
   spesaEditId:    null,
+  ricEditId:      null,
+  ricPrivataOn:   false,
+  ricAttivaOn:    true,
   initPronto:     false,
   sortBy:         'data',
   sortOrder:      'desc',
@@ -71,6 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('filtroMese').value = new Date().getMonth() + 1;
   document.getElementById('spesaData').value  = oggi();
   document.getElementById('formSpesa').addEventListener('submit', salvaSpesa);
+  const formRic = document.getElementById('formRicorrente');
+  if (formRic) formRic.addEventListener('submit', salvaRicorrente);
 
   const nomeCache = localStorage.getItem('app_nome') || 'HouseFunds';
   document.title = nomeCache;
@@ -294,9 +299,10 @@ function mostraTab(nome) {
   document.getElementById(`tab-${nome}`).classList.add('active');
   document.getElementById(`nav-${nome}`).classList.add('active');
 
-  if (nome === 'spese')     caricaSpese();
-  if (nome === 'dashboard') caricaDashboard();
-  if (nome === 'eventi')    caricaEventi();
+  if (nome === 'spese')      caricaSpese();
+  if (nome === 'dashboard')  caricaDashboard();
+  if (nome === 'eventi')     caricaEventi();
+  if (nome === 'ricorrenti') caricaRicorrenti();
 }
 
 // ── CSRF con cache 10 minuti ──────────────────────────────────
@@ -608,7 +614,7 @@ function rigaSpesaCompleta(s) {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:500;word-break:break-word">${esc(s.descrizione || '—')}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:2px">${meta}${s.privata ? ' · 🔒' : ''}</div>${eventoHtml}
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">${meta}${s.privata ? ' · 🔒' : ''}${s.id_ricorrenza ? ' · 🔁' : ''}</div>${eventoHtml}
       </div>
       <div style="flex-shrink:0;display:flex;align-items:center;gap:6px">
         <span style="font-weight:700;white-space:nowrap" class="${colore}">${segno}${formatEuro(Math.abs(s.importo))}</span>
@@ -829,6 +835,232 @@ async function eliminaSpesa(id) {
     if (typeof caricaDashboard === 'function') caricaDashboard();
   } catch(e) {
     console.error('eliminaSpesa:', e);
+    alert('Errore: ' + e.message);
+  }
+}
+
+// ── Spese ricorrenti ─────────────────────────────────────────
+function etichettaFrequenza(r) {
+  const singolare = { giorni: 'ogni giorno',     settimane: 'ogni settimana',     mesi: 'ogni mese',     anni: 'ogni anno' };
+  const plurale   = { giorni: 'ogni {0} giorni', settimane: 'ogni {0} settimane', mesi: 'ogni {0} mesi', anni: 'ogni {0} anni' };
+  const n = r.intervallo;
+  return n === 1 ? t(singolare[r.unita] || r.unita) : t(plurale[r.unita] || r.unita, n);
+}
+
+async function caricaRicorrenti() {
+  const cont = document.getElementById('ricorrentiLista');
+  if (!cont) return;
+  cont.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">Caricamento…</div>';
+  try {
+    const dati  = await api('/api/ricorrenti.php');
+    const lista = dati.ricorrenti || [];
+    if (!lista.length) {
+      cont.innerHTML = '<div class="text-center text-gray-400 text-sm py-10">Nessuna spesa ricorrente. Tocca "Nuova" per crearne una.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(rigaRicorrente).join('');
+  } catch(e) {
+    cont.innerHTML = `<div class="text-center text-red-500 text-sm py-8">Errore: ${esc(e.message)}</div>`;
+  }
+}
+
+function rigaRicorrente(r) {
+  const tipo     = r.categoria_tipo === 'accredito';
+  const colore   = tipo ? 'text-green-600' : 'text-red-600';
+  const segno    = tipo ? '+' : '-';
+  const meta     = `${esc(I18N.nomeCategoria(r.categoria))}${r.sottocategoria ? ' / ' + esc(r.sottocategoria) : ''}`;
+  const prossima = r.attiva ? t('prossima: {0}', formatData(r.prossima_data)) : t('in pausa');
+  const fine     = r.data_fine ? ' · ' + t('fino al {0}', formatData(r.data_fine)) : '';
+  const opacita  = r.attiva ? '' : 'opacity-60';
+  return `
+  <div class="p-3 border border-gray-200 rounded-lg bg-white ${opacita}" onclick="modificaRicorrente(${r.id})" style="cursor:pointer">
+    <div style="display:flex;align-items:flex-start;gap:12px;width:100%">
+      <div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;background:${esc(r.categoria_colore || '#999')}">🔁</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;word-break:break-word">${esc(r.descrizione || meta)}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:2px">${meta} · ${esc(etichettaFrequenza(r))}${r.privata ? ' · 🔒' : ''}</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(prossima)}${esc(fine)}</div>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center">
+        <span style="font-weight:700;white-space:nowrap" class="${colore}">${segno}${formatEuro(Math.abs(r.importo))}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function popolaCategorieRic() {
+  const sel = document.getElementById('ricorrenteCategoria');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Seleziona…</option>';
+  S.categorie.filter(c => c.attiva).forEach(c => {
+    sel.innerHTML += `<option value="${c.id}" data-tipo="${c.tipo}">${esc(I18N.nomeCategoria(c.nome))}</option>`;
+  });
+}
+
+function aggiornaSottocategorieRic() {
+  const idCat  = document.getElementById('ricorrenteCategoria').value;
+  const sel    = document.getElementById('ricorrenteSottocategoria');
+  const cat    = idCat ? S.categorie.find(c => c.id == idCat) : null;
+  const eventi = !!cat?.sistema;
+  sel.innerHTML = eventi ? '<option value="">Seleziona l\'evento…</option>' : '<option value="">Nessuna</option>';
+  sel.required  = eventi;
+  if (!cat) return;
+  (cat.sottocategorie || []).filter(s => s.attiva).forEach(s => {
+    sel.innerHTML += `<option value="${s.id}">${esc(s.nome)}</option>`;
+  });
+}
+
+function apriModalRicorrente(r = null) {
+  S.ricEditId    = r?.id || null;
+  S.ricPrivataOn = r?.privata || false;
+  S.ricAttivaOn  = r ? !!r.attiva : true;
+  popolaCategorieRic();
+
+  document.getElementById('modalRicorrenteTitolo').textContent = r ? 'Modifica spesa ricorrente' : 'Nuova spesa ricorrente';
+  document.getElementById('ricorrenteId').value          = r?.id || '';
+  document.getElementById('ricorrenteImporto').value     = r ? Math.abs(r.importo) : '';
+  document.getElementById('ricorrenteDescrizione').value = r?.descrizione || '';
+  document.getElementById('ricorrenteIntervallo').value  = r?.intervallo || 1;
+  document.getElementById('ricorrenteUnita').value       = r?.unita || 'mesi';
+  document.getElementById('ricorrenteDataInizio').value  = r?.data_inizio || oggi();
+  document.getElementById('ricorrenteDataFine').value    = r?.data_fine || '';
+  document.getElementById('ricorrenteErrore').classList.add('hidden');
+
+  const selCat = document.getElementById('ricorrenteCategoria');
+  if (r) {
+    if (r.categoria_id && !selCat.querySelector(`option[value="${r.categoria_id}"]`)) {
+      selCat.insertAdjacentHTML('beforeend', `<option value="${r.categoria_id}">${esc(r.categoria || '')} (disattiva)</option>`);
+    }
+    selCat.value = r.categoria_id;
+    aggiornaSottocategorieRic();
+    const selSub = document.getElementById('ricorrenteSottocategoria');
+    if (r.sottocategoria_id && !selSub.querySelector(`option[value="${r.sottocategoria_id}"]`)) {
+      selSub.insertAdjacentHTML('beforeend', `<option value="${r.sottocategoria_id}">${esc(r.sottocategoria || '')} (disattiva)</option>`);
+    }
+    selSub.value = r.sottocategoria_id || '';
+  } else {
+    selCat.value = '';
+    aggiornaSottocategorieRic();
+  }
+
+  const attivaRow = document.getElementById('ricorrenteAttivaRow');
+  attivaRow.classList.toggle('hidden', !r);
+  attivaRow.classList.toggle('flex', !!r);
+  document.getElementById('btnEliminaRic').classList.toggle('hidden', !r);
+
+  aggiornaToggleRic();
+  document.getElementById('modalRicorrente').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function chiudiModalRicorrente() {
+  document.getElementById('modalRicorrente').classList.add('hidden');
+  document.body.style.overflow = '';
+  S.ricEditId = null;
+}
+
+function toggleRicPrivata() { S.ricPrivataOn = !S.ricPrivataOn; aggiornaToggleRic(); }
+function toggleRicAttiva()  { S.ricAttivaOn  = !S.ricAttivaOn;  aggiornaToggleRic(); }
+
+function aggiornaToggleRic() {
+  const p  = document.getElementById('toggleRicPrivata');
+  const pt = document.getElementById('toggleRicPrivataThumb');
+  if (p) {
+    p.setAttribute('aria-checked', S.ricPrivataOn);
+    p.classList.toggle('bg-indigo-600', S.ricPrivataOn);
+    p.classList.toggle('bg-gray-200', !S.ricPrivataOn);
+    pt.style.transform = S.ricPrivataOn ? 'translateX(16px)' : 'translateX(0)';
+  }
+  const a  = document.getElementById('toggleRicAttiva');
+  const at = document.getElementById('toggleRicAttivaThumb');
+  if (a) {
+    a.setAttribute('aria-checked', S.ricAttivaOn);
+    a.classList.toggle('bg-indigo-600', S.ricAttivaOn);
+    a.classList.toggle('bg-gray-200', !S.ricAttivaOn);
+    at.style.transform = S.ricAttivaOn ? 'translateX(16px)' : 'translateX(0)';
+  }
+}
+
+async function salvaRicorrente(e) {
+  e.preventDefault();
+  const errEl   = document.getElementById('ricorrenteErrore');
+  const spinner = document.getElementById('btnSalvaRicSpinner');
+  const btn     = document.getElementById('btnSalvaRic');
+  errEl.classList.add('hidden');
+
+  const importo     = parseFloat(document.getElementById('ricorrenteImporto').value);
+  const idCategoria = document.getElementById('ricorrenteCategoria').value;
+  const idSottoCat  = document.getElementById('ricorrenteSottocategoria').value;
+  const descrizione = document.getElementById('ricorrenteDescrizione').value.trim();
+  const intervallo  = parseInt(document.getElementById('ricorrenteIntervallo').value);
+  const unita       = document.getElementById('ricorrenteUnita').value;
+  const dataInizio  = document.getElementById('ricorrenteDataInizio').value;
+  const dataFine    = document.getElementById('ricorrenteDataFine').value;
+
+  if (!importo || !idCategoria || !intervallo || !dataInizio) {
+    errEl.textContent = 'Importo, categoria, intervallo e data di inizio sono obbligatori.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (S.categorie.find(c => c.id == idCategoria)?.sistema && !idSottoCat) {
+    errEl.textContent = "Seleziona l'evento a cui associare la spesa.";
+    errEl.classList.remove('hidden'); return;
+  }
+  if (dataFine && dataFine < dataInizio) {
+    errEl.textContent = 'La data di fine non può precedere la data di inizio.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  spinner.classList.remove('hidden'); btn.disabled = true;
+  const payload = {
+    importo,
+    id_categoria:      parseInt(idCategoria),
+    id_sottocategoria: idSottoCat ? parseInt(idSottoCat) : null,
+    descrizione,
+    intervallo,
+    unita,
+    data_inizio:       dataInizio,
+    data_fine:         dataFine || null,
+    privata:           S.ricPrivataOn,
+    attiva:            S.ricAttivaOn,
+  };
+
+  try {
+    const isEdit = !!S.ricEditId;
+    await api(
+      isEdit ? `/api/ricorrenti.php?id=${S.ricEditId}` : '/api/ricorrenti.php',
+      { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(payload) }
+    );
+    chiudiModalRicorrente();
+    caricaRicorrenti();
+    // La ricorrenza può aver generato spese: aggiorna anche le altre viste.
+    if (typeof caricaSpese === 'function')     caricaSpese(1);
+    if (typeof caricaDashboard === 'function') caricaDashboard();
+  } catch(err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  } finally {
+    spinner.classList.add('hidden'); btn.disabled = false;
+  }
+}
+
+async function modificaRicorrente(id) {
+  try {
+    const dati = await api(`/api/ricorrenti.php?id=${encodeURIComponent(id)}`);
+    if (!dati || !dati.ricorrente) { alert('Ricorrenza non trovata.'); return; }
+    apriModalRicorrente(dati.ricorrente);
+  } catch(e) {
+    alert('Errore nel caricamento: ' + e.message);
+  }
+}
+
+async function eliminaRicorrente() {
+  if (!S.ricEditId) return;
+  if (!confirm('Eliminare questa ricorrenza? Le spese già registrate restano, ma non ne verranno create altre.')) return;
+  try {
+    await api(`/api/ricorrenti.php?id=${encodeURIComponent(S.ricEditId)}`, { method: 'DELETE' });
+    chiudiModalRicorrente();
+    caricaRicorrenti();
+  } catch(e) {
     alert('Errore: ' + e.message);
   }
 }
