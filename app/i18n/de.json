@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Wiederkehrende Ausgabe gelöscht. Bereits erfasste Ausgaben bleiben erhalten.",
  "Non puoi modificare questa ricorrenza.": "Du kannst diese wiederkehrende Ausgabe nicht bearbeiten.",
  "Non puoi eliminare questa ricorrenza.": "Du kannst diese wiederkehrende Ausgabe nicht löschen.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Löschen nicht möglich: Es gibt verknüpfte wiederkehrende Ausgaben. Deaktiviere die Kategorie."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Löschen nicht möglich: Es gibt verknüpfte wiederkehrende Ausgaben. Deaktiviere die Kategorie.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Ereignis nicht mehr aktiv: wiederkehrende Ausgabe ausgesetzt. Wähle ein anderes Ereignis oder eine andere Kategorie.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Kategorie deaktiviert: wiederkehrende Ausgabe ausgesetzt. Wähle eine andere Kategorie oder aktiviere sie wieder.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Unterkategorie deaktiviert: wiederkehrende Ausgabe ausgesetzt. Wähle eine andere Unterkategorie oder aktiviere sie wieder."
 }

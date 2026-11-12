@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Dépense récurrente supprimée. Les dépenses déjà enregistrées sont conservées.",
  "Non puoi modificare questa ricorrenza.": "Vous ne pouvez pas modifier cette dépense récurrente.",
  "Non puoi eliminare questa ricorrenza.": "Vous ne pouvez pas supprimer cette dépense récurrente.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Suppression impossible : des dépenses récurrentes sont liées. Désactivez la catégorie."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Suppression impossible : des dépenses récurrentes sont liées. Désactivez la catégorie.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Événement plus actif : dépense récurrente suspendue. Choisissez un autre événement ou une autre catégorie.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Catégorie désactivée : dépense récurrente suspendue. Choisissez une autre catégorie ou réactivez-la.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Sous-catégorie désactivée : dépense récurrente suspendue. Choisissez une autre sous-catégorie ou réactivez-la."
 }

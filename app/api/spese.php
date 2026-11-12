@@ -284,7 +284,9 @@ function crea(): void {
 // ------------------------------------------------------------
 function aggiorna(int $id): void {
     [$utente, $casaId] = richiedeAccessoCasa();
-    $isAdmin = checkPermesso($utente['id'], $casaId, 'admin');
+    // checkPermesso(..., 'admin') risponderebbe 403 ai non admin, impedendo
+    // all'autore di agire sulle proprie spese: qui serve solo sapere il ruolo.
+    $isAdmin = checkPermesso($utente['id'], $casaId) === 'admin';
     $dati    = inputJSON();
 
     verificaCSRF($dati['csrf_token'] ?? null);
@@ -297,7 +299,7 @@ function aggiorna(int $id): void {
     if (!$spesa) rispostaErrore(404, 'Spesa non trovata.');
 
     // Solo il proprietario o l'admin di casa può modificare
-    if (!$isAdmin && $spesa['id_utente'] !== $utente['id']) {
+    if (!$isAdmin && (int)$spesa['id_utente'] !== (int)$utente['id']) {
         rispostaErrore(403, 'Non puoi modificare questa spesa.');
     }
 
@@ -336,7 +338,9 @@ function aggiorna(int $id): void {
 // ------------------------------------------------------------
 function elimina(int $id): void {
     [$utente, $casaId] = richiedeAccessoCasa();
-    $isAdmin = checkPermesso($utente['id'], $casaId, 'admin');
+    // checkPermesso(..., 'admin') risponderebbe 403 ai non admin, impedendo
+    // all'autore di agire sulle proprie spese: qui serve solo sapere il ruolo.
+    $isAdmin = checkPermesso($utente['id'], $casaId) === 'admin';
     $db      = getDB();
 
     $stmt = $db->prepare("SELECT id, id_utente FROM spese WHERE id = ? AND casa_id = ?");
@@ -346,7 +350,7 @@ function elimina(int $id): void {
     if (!$spesa) rispostaErrore(404, 'Spesa non trovata.');
 
     // Solo il proprietario o l'admin di casa può eliminare
-    if (!$isAdmin && $spesa['id_utente'] !== $utente['id']) {
+    if (!$isAdmin && (int)$spesa['id_utente'] !== (int)$utente['id']) {
         rispostaErrore(403, 'Non puoi eliminare questa spesa.');
     }
 

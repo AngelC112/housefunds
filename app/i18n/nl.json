@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Terugkerende uitgave verwijderd. Reeds geregistreerde uitgaven blijven bewaard.",
  "Non puoi modificare questa ricorrenza.": "Je kunt deze terugkerende uitgave niet bewerken.",
  "Non puoi eliminare questa ricorrenza.": "Je kunt deze terugkerende uitgave niet verwijderen.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Verwijderen niet mogelijk: er zijn gekoppelde terugkerende uitgaven. Deactiveer de categorie."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Verwijderen niet mogelijk: er zijn gekoppelde terugkerende uitgaven. Deactiveer de categorie.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Evenement niet meer actief: terugkerende uitgave opgeschort. Kies een ander evenement of een andere categorie.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Categorie gedeactiveerd: terugkerende uitgave opgeschort. Kies een andere categorie of activeer ze opnieuw.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Subcategorie gedeactiveerd: terugkerende uitgave opgeschort. Kies een andere subcategorie of activeer ze opnieuw."
 }

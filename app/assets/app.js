@@ -106,6 +106,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     .then(p => { if (p && p.utente) I18N.sincronizzaUtente(p.utente); })
     .catch(() => {});
 
+  // Ricorrenti in background: serve per il pallino rosso sul menu
+  caricaRicorrenti().catch(() => {});
+
   // Carica lista case per il switcher; dopo aggiorna il link admin col ruolo reale
   caricaCaseUtente().then(() => aggiornaLinkAdmin()).catch(() => {});
 
@@ -854,6 +857,7 @@ async function caricaRicorrenti() {
   try {
     const dati  = await api('/api/ricorrenti.php');
     const lista = dati.ricorrenti || [];
+    aggiornaAvvisoRicorrenti(lista);
     if (!lista.length) {
       cont.innerHTML = '<div class="text-center text-gray-400 text-sm py-10">Nessuna spesa ricorrente. Tocca "Nuova" per crearne una.</div>';
       return;
@@ -864,6 +868,22 @@ async function caricaRicorrenti() {
   }
 }
 
+// Ricorrenza attiva che non può generare spese (evento o categoria non più attivi)
+const MESSAGGI_BLOCCO_RIC = {
+  evento:         "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.",
+  categoria:      "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.",
+  sottocategoria: "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.",
+};
+function messaggioBloccoRic(r) {
+  return r && r.attiva && r.blocco ? t(MESSAGGI_BLOCCO_RIC[r.blocco] || MESSAGGI_BLOCCO_RIC.categoria) : '';
+}
+
+// Pallino rosso sulla voce "Ricorrenti" del menu se almeno una è da sistemare
+function aggiornaAvvisoRicorrenti(lista) {
+  const dot = document.getElementById('navRicorrentiAvviso');
+  if (dot) dot.classList.toggle('hidden', !lista.some(r => r.attiva && r.blocco));
+}
+
 function rigaRicorrente(r) {
   const tipo     = r.categoria_tipo === 'accredito';
   const colore   = tipo ? 'text-green-600' : 'text-red-600';
@@ -872,14 +892,19 @@ function rigaRicorrente(r) {
   const prossima = r.attiva ? t('prossima: {0}', formatData(r.prossima_data)) : t('in pausa');
   const fine     = r.data_fine ? ' · ' + t('fino al {0}', formatData(r.data_fine)) : '';
   const opacita  = r.attiva ? '' : 'opacity-60';
+  const blocco   = messaggioBloccoRic(r);
+  const pallino  = blocco ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px;vertical-align:middle"></span>' : '';
+  const statoHtml = blocco
+    ? `<div style="font-size:12px;color:#dc2626;margin-top:2px">${esc(blocco)}</div>`
+    : `<div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(prossima)}${esc(fine)}</div>`;
   return `
   <div class="p-3 border border-gray-200 rounded-lg bg-white ${opacita}" onclick="modificaRicorrente(${r.id})" style="cursor:pointer">
     <div style="display:flex;align-items:flex-start;gap:12px;width:100%">
       <div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;background:${esc(r.categoria_colore || '#999')}">🔁</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:500;word-break:break-word">${esc(r.descrizione || meta)}</div>
+        <div style="font-weight:500;word-break:break-word">${pallino}${esc(r.descrizione || meta)}</div>
         <div style="font-size:12px;color:#6b7280;margin-top:2px">${meta} · ${esc(etichettaFrequenza(r))}${r.privata ? ' · 🔒' : ''}</div>
-        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${esc(prossima)}${esc(fine)}</div>
+        ${statoHtml}
       </div>
       <div style="flex-shrink:0;display:flex;align-items:center">
         <span style="font-weight:700;white-space:nowrap" class="${colore}">${segno}${formatEuro(Math.abs(r.importo))}</span>
@@ -924,7 +949,11 @@ function apriModalRicorrente(r = null) {
   document.getElementById('ricorrenteUnita').value       = r?.unita || 'mesi';
   document.getElementById('ricorrenteDataInizio').value  = r?.data_inizio || oggi();
   document.getElementById('ricorrenteDataFine').value    = r?.data_fine || '';
-  document.getElementById('ricorrenteErrore').classList.add('hidden');
+  // In modifica di una ricorrenza bloccata, spiega subito cosa va sistemato
+  const errRic    = document.getElementById('ricorrenteErrore');
+  const bloccoMsg = messaggioBloccoRic(r);
+  errRic.textContent = bloccoMsg;
+  errRic.classList.toggle('hidden', !bloccoMsg);
 
   const selCat = document.getElementById('ricorrenteCategoria');
   if (r) {

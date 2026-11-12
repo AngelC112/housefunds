@@ -64,6 +64,27 @@ function componiData(int $anno, int $mese, int $giorno): string {
 }
 
 /**
+ * Motivo per cui un modello attivo non può generare spese, o null se può.
+ *   'evento'          categoria di sistema EVENTI senza un evento attivo
+ *                     (l'evento è stato eliminato o disattivato)
+ *   'categoria'       categoria disattivata
+ *   'sottocategoria'  sottocategoria disattivata
+ * $r deve contenere: categoria_attiva, categoria_sistema, sottocategoria_id,
+ * sottocategoria_attiva.
+ */
+function motivoBloccoRicorrenza(array $r): ?string {
+    $haSotto     = $r['sottocategoria_id'] !== null;
+    $sottoAttiva = $haSotto && (int)$r['sottocategoria_attiva'] === 1;
+
+    if (!empty($r['categoria_sistema'])) {
+        return $sottoAttiva ? null : 'evento';
+    }
+    if ((int)$r['categoria_attiva'] !== 1) return 'categoria';
+    if ($haSotto && !$sottoAttiva)         return 'sottocategoria';
+    return null;
+}
+
+/**
  * Materializza nella tabella spese tutte le scadenze arretrate dei modelli
  * attivi della casa. Idempotente. Non lancia eccezioni verso il chiamante:
  * un errore viene loggato e la generazione interrotta, così la pagina che
@@ -75,12 +96,19 @@ function generaRicorrenzeScadute(PDO $db, int $casaId): void {
 
         // Solo i modelli il cui autore è ancora membro della casa: chi l'ha
         // lasciata non genera più spese a suo nome.
+        // Un modello "bloccato" (vedi motivoBloccoRicorrenza) viene saltato senza
+        // far avanzare il cursore: riparte da dove era quando viene sistemato.
         $sel = $db->prepare("
             SELECT r.id, r.id_utente, r.id_categoria, r.id_sottocategoria, r.descrizione,
                    r.importo, r.privata, r.intervallo, r.unita, r.data_inizio, r.data_fine, r.prossima_data
             FROM spese_ricorrenti r
+            JOIN categorie c ON c.id = r.id_categoria
+            LEFT JOIN sottocategorie sc ON sc.id = r.id_sottocategoria
             WHERE r.casa_id = ? AND r.attiva = 1 AND r.prossima_data <= ?
               AND (r.data_fine IS NULL OR r.prossima_data <= r.data_fine)
+              AND c.attiva = 1
+              AND (r.id_sottocategoria IS NULL OR sc.attiva = 1)
+              AND (c.sistema IS NULL OR r.id_sottocategoria IS NOT NULL)
               AND EXISTS (SELECT 1 FROM utenti_case uc
                           WHERE uc.utente_id = r.id_utente AND uc.casa_id = r.casa_id AND uc.invito_accettato = 1)
         ");

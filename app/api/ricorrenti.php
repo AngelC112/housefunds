@@ -104,7 +104,8 @@ function lista(): void {
             r.intervallo, r.unita, r.data_inizio, r.data_fine,
             r.prossima_data, r.attiva, r.creato_il,
             c.id AS categoria_id, c.nome AS categoria, c.tipo AS categoria_tipo, c.colore AS categoria_colore,
-            sc.id AS sottocategoria_id, sc.nome AS sottocategoria,
+            c.attiva AS categoria_attiva, c.sistema AS categoria_sistema,
+            sc.id AS sottocategoria_id, sc.nome AS sottocategoria, sc.attiva AS sottocategoria_attiva,
             u.id AS utente_id, u.nome AS utente_nome
         FROM spese_ricorrenti r
         JOIN categorie c ON c.id = r.id_categoria
@@ -121,7 +122,9 @@ function lista(): void {
         $r['privata']    = (bool)$r['privata'];
         $r['attiva']     = (bool)$r['attiva'];
         $r['intervallo'] = (int)$r['intervallo'];
+        $r['blocco']     = motivoBloccoRicorrenza($r);
     }
+    unset($r);
 
     risposta(['ricorrenti' => $righe]);
 }
@@ -137,7 +140,8 @@ function dettaglio(int $id): void {
             r.intervallo, r.unita, r.data_inizio, r.data_fine,
             r.prossima_data, r.attiva, r.creato_il, r.id_utente,
             c.id AS categoria_id, c.nome AS categoria, c.tipo AS categoria_tipo, c.colore AS categoria_colore,
-            sc.id AS sottocategoria_id, sc.nome AS sottocategoria
+            c.attiva AS categoria_attiva, c.sistema AS categoria_sistema,
+            sc.id AS sottocategoria_id, sc.nome AS sottocategoria, sc.attiva AS sottocategoria_attiva
         FROM spese_ricorrenti r
         JOIN categorie c ON c.id = r.id_categoria
         LEFT JOIN sottocategorie sc ON sc.id = r.id_sottocategoria
@@ -155,6 +159,7 @@ function dettaglio(int $id): void {
     $r['privata']    = (bool)$r['privata'];
     $r['attiva']     = (bool)$r['attiva'];
     $r['intervallo'] = (int)$r['intervallo'];
+    $r['blocco']     = motivoBloccoRicorrenza($r);
 
     risposta(['ricorrente' => $r]);
 }

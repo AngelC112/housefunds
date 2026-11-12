@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Usunięto wydatek cykliczny. Zapisane już wydatki pozostają.",
  "Non puoi modificare questa ricorrenza.": "Nie możesz edytować tego wydatku cyklicznego.",
  "Non puoi eliminare questa ricorrenza.": "Nie możesz usunąć tego wydatku cyklicznego.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Nie można usunąć: istnieją powiązane wydatki cykliczne. Dezaktywuj kategorię."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Nie można usunąć: istnieją powiązane wydatki cykliczne. Dezaktywuj kategorię.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Wydarzenie nie jest już aktywne: wydatek cykliczny wstrzymany. Wybierz inne wydarzenie lub inną kategorię.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Kategoria wyłączona: wydatek cykliczny wstrzymany. Wybierz inną kategorię lub włącz ją ponownie.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Podkategoria wyłączona: wydatek cykliczny wstrzymany. Wybierz inną podkategorię lub włącz ją ponownie."
 }

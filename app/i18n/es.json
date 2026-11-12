@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Gasto recurrente eliminado. Los gastos ya registrados se conservan.",
  "Non puoi modificare questa ricorrenza.": "No puedes editar este gasto recurrente.",
  "Non puoi eliminare questa ricorrenza.": "No puedes eliminar este gasto recurrente.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "No se puede eliminar: hay gastos recurrentes vinculados. Desactiva la categoría."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "No se puede eliminar: hay gastos recurrentes vinculados. Desactiva la categoría.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Evento ya no activo: gasto recurrente suspendido. Elige otro evento u otra categoría.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Categoría desactivada: gasto recurrente suspendido. Elige otra categoría o reactívala.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Subcategoría desactivada: gasto recurrente suspendido. Elige otra subcategoría o reactívala."
 }

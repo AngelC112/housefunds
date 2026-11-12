@@ -702,5 +702,8 @@
  "Spesa ricorrente eliminata. Le spese già registrate restano.": "Recurring expense deleted. Expenses already recorded are kept.",
  "Non puoi modificare questa ricorrenza.": "You cannot edit this recurring expense.",
  "Non puoi eliminare questa ricorrenza.": "You cannot delete this recurring expense.",
- "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Cannot delete: there are linked recurring expenses. Deactivate the category."
+ "Impossibile eliminare: esistono spese ricorrenti collegate. Disattiva la categoria.": "Cannot delete: there are linked recurring expenses. Deactivate the category.",
+ "Evento non più attivo: ricorrenza sospesa. Scegli un altro evento o un'altra categoria.": "Event no longer active: recurring expense suspended. Choose another event or category.",
+ "Categoria disattivata: ricorrenza sospesa. Scegli un'altra categoria o riattivala.": "Category deactivated: recurring expense suspended. Choose another category or reactivate it.",
+ "Sottocategoria disattivata: ricorrenza sospesa. Scegli un'altra sottocategoria o riattivala.": "Subcategory deactivated: recurring expense suspended. Choose another subcategory or reactivate it."
 }
