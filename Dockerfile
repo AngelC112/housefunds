@@ -1,16 +1,20 @@
 # ============================================================
 # HouseFunds - single container image
 #
-# PHP 8.3 + Apache, with an embedded MariaDB that starts only when
+# PHP 8.5 + Apache, with an embedded MariaDB that starts only when
 # no external database is configured (DB_HOST not set).
 # Everything that must persist lives in /data (mount a volume there).
 # ============================================================
 
-FROM php:8.3-apache-bookworm
+# bookworm, not trixie: trixie ships a newer MariaDB, and the embedded
+# databases already in /data were created with the bookworm one.
+FROM php:8.5-apache-bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# PHP extensions (pdo_mysql, pdo_pgsql, gd, zip, intl) and the embedded MariaDB
+# PHP extensions (pdo_mysql, pdo_pgsql, gd, zip, intl) and the embedded MariaDB.
+# Since PHP 8.5 OPcache is part of PHP itself: it is built as an extension
+# only on older versions.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       mariadb-server mariadb-client \
@@ -18,7 +22,8 @@ RUN apt-get update \
       libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
       unzip \
  && docker-php-ext-configure gd --with-freetype --with-jpeg \
- && docker-php-ext-install -j"$(nproc)" pdo_mysql pdo_pgsql zip gd intl opcache \
+ && docker-php-ext-install -j"$(nproc)" pdo_mysql pdo_pgsql zip gd intl \
+ && { php -m | grep -qi '^Zend OPcache$' || docker-php-ext-install opcache; } \
  && rm -rf /var/lib/apt/lists/* /var/lib/mysql/*
 
 # Apache: .htaccess support and the modules it uses
@@ -63,4 +68,7 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD php -r 'exit(@file_get_contents("http://127.0.0.1/index.html") === false ? 1 : 0);'
 
+# The entrypoint script is process 1 and stops Apache and MariaDB in order
+# on SIGTERM; the base image's SIGWINCH would be ignored by it.
+STOPSIGNAL SIGTERM
 ENTRYPOINT ["housefunds-entrypoint"]
