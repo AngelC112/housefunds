@@ -1,0 +1,44 @@
+/* ============================================================
+   Accessibility rules shared by every page.
+   Loaded after the page styles so these rules take precedence.
+   ============================================================ */
+
+/* ── Visible focus for keyboard users ─────────────────────────
+   Text fields keep their own focus style (indigo border and halo,
+   defined in each page). Buttons, links, switches and other
+   focusable elements get an indigo ring, shown only when the
+   browser decides focus came from the keyboard (:focus-visible),
+   so mouse clicks do not show it. */
+:where(a[href], button, summary, [role="switch"], [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* Checkboxes and radios: the page rule removes the outline on focus,
+   so give them a ring for keyboard focus. */
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────
+   When the system asks for less motion, entrance animations,
+   shakes, shimmers and transitions finish at once. Spinners keep
+   turning, slower, so a loading state never looks frozen. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-spin,
+  .spinner {
+    animation-duration: 1.5s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

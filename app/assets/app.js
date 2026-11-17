@@ -1380,8 +1380,8 @@ function costruisciMapping(intestazioni) {
 
   container.innerHTML = CAMPI_IMPORT.map(campo => `
     <div>
-      <label class="block text-xs font-medium text-gray-600 mb-1">${campo.label}</label>
-      <select data-campo="${campo.id}" onchange="IMP.mapping['${campo.id}']=this.value===''?'':parseInt(this.value)"
+      <label for="impCampo-${campo.id}" class="block text-xs font-medium text-gray-600 mb-1">${campo.label}</label>
+      <select id="impCampo-${campo.id}" data-campo="${campo.id}" onchange="IMP.mapping['${campo.id}']=this.value===''?'':parseInt(this.value)"
         class="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs bg-white">
         <option value="">— non presente —</option>
         ${intestazioni.map((h, i) =>
@@ -2142,12 +2142,12 @@ async function apriModalMiniCat(catId, eventoId) {
       </div>
       <div id="miniCatErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 mb-3"></div>
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Nome voce</label>
+        <label for="miniCatNome" class="block text-xs font-medium text-gray-600 mb-1">Nome voce</label>
         <input type="text" id="miniCatNome" value="${esc(cat.nome)}" maxlength="255"
                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
       </div>
       <div class="mb-5">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Importo stimato (€)</label>
+        <label for="miniCatImporto" class="block text-xs font-medium text-gray-600 mb-1">Importo stimato (€)</label>
         <input type="number" id="miniCatImporto" value="${stimato.toFixed(2)}"
                step="0.01" min="0"
                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">

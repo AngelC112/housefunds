@@ -41,7 +41,10 @@
     ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:2px; }
     @media(max-width:640px) { .table-scroll { overflow-x: auto; } }
   </style>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=2">
+  <!-- Shared accessibility rules: keyboard focus, reduced motion, modal dialogs -->
+  <link rel="stylesheet" href="assets/a11y.css?v=1">
+  <script src="assets/a11y.js?v=1" defer></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
 <div id="appLoading" class="app-loading-overlay hidden"></div>
@@ -280,7 +283,7 @@
       <!-- Step 1: drop zone -->
       <div id="importStep1">
         <div id="dropZone"
-          class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all"
+          class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
           onclick="document.getElementById('fileImport').click()"
           ondragover="event.preventDefault(); this.classList.add('border-indigo-400','bg-indigo-50')"
           ondragleave="this.classList.remove('border-indigo-400','bg-indigo-50')"
@@ -457,12 +460,12 @@
       <div class="grid grid-cols-2 gap-3 mb-3">
         <!-- Data -->
         <div class="col-span-2 sm:col-span-1">
-          <label class="block text-xs font-medium text-gray-600 mb-1">Data *</label>
+          <label for="spesaData" class="block text-xs font-medium text-gray-600 mb-1">Data *</label>
           <input type="date" id="spesaData" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
         </div>
         <!-- Importo -->
         <div class="col-span-2 sm:col-span-1">
-          <label class="block text-xs font-medium text-gray-600 mb-1">Importo (€) *</label>
+          <label for="spesaImporto" class="block text-xs font-medium text-gray-600 mb-1">Importo (€) *</label>
           <input type="number" id="spesaImporto" step="0.01" min="0.01" placeholder="0,00"
             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
         </div>
@@ -470,7 +473,7 @@
 
       <!-- Categoria -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
+        <label for="spesaCategoria" class="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
         <select id="spesaCategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="aggiornaSottocategorie()" required>
           <option value="">Seleziona…</option>
         </select>
@@ -478,7 +481,7 @@
 
       <!-- Sottocategoria -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Sottocategoria</label>
+        <label for="spesaSottocategoria" class="block text-xs font-medium text-gray-600 mb-1">Sottocategoria</label>
         <select id="spesaSottocategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
           <option value="">Nessuna</option>
         </select>
@@ -486,7 +489,7 @@
 
       <!-- Descrizione -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+        <label for="spesaDescrizione" class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
         <input type="text" id="spesaDescrizione" maxlength="255" placeholder="Es. Supermercato Esselunga…"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
       </div>
@@ -494,7 +497,7 @@
       <!-- Toggle privata -->
       <div class="flex items-center gap-3 mb-5">
         <button type="button" id="togglePrivata" onclick="togglePrivata()"
-          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200 focus:outline-none"
+          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200"
           role="switch" aria-checked="false">
           <span id="toggleThumb" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
         </button>
@@ -530,14 +533,14 @@
 
       <!-- Importo -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Importo (€) *</label>
+        <label for="ricorrenteImporto" class="block text-xs font-medium text-gray-600 mb-1">Importo (€) *</label>
         <input type="number" id="ricorrenteImporto" step="0.01" min="0.01" placeholder="0,00"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
       </div>
 
       <!-- Categoria -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
+        <label for="ricorrenteCategoria" class="block text-xs font-medium text-gray-600 mb-1">Categoria *</label>
         <select id="ricorrenteCategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="aggiornaSottocategorieRic()" required>
           <option value="">Seleziona…</option>
         </select>
@@ -545,7 +548,7 @@
 
       <!-- Sottocategoria -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Sottocategoria</label>
+        <label for="ricorrenteSottocategoria" class="block text-xs font-medium text-gray-600 mb-1">Sottocategoria</label>
         <select id="ricorrenteSottocategoria" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
           <option value="">Nessuna</option>
         </select>
@@ -553,7 +556,7 @@
 
       <!-- Descrizione -->
       <div class="mb-3">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+        <label for="ricorrenteDescrizione" class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
         <input type="text" id="ricorrenteDescrizione" maxlength="255" placeholder="Es. Affitto, Netflix…"
           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
       </div>
@@ -561,12 +564,12 @@
       <!-- Frequenza -->
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Ogni *</label>
+          <label for="ricorrenteIntervallo" class="block text-xs font-medium text-gray-600 mb-1">Ogni *</label>
           <input type="number" id="ricorrenteIntervallo" min="1" max="999" value="1"
             class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Periodo *</label>
+          <label for="ricorrenteUnita" class="block text-xs font-medium text-gray-600 mb-1">Periodo *</label>
           <select id="ricorrenteUnita" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="giorni">giorni</option>
             <option value="settimane">settimane</option>
@@ -579,11 +582,11 @@
       <!-- Date -->
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Inizio *</label>
+          <label for="ricorrenteDataInizio" class="block text-xs font-medium text-gray-600 mb-1">Inizio *</label>
           <input type="date" id="ricorrenteDataInizio" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" required>
         </div>
         <div>
-          <label class="block text-xs font-medium text-gray-600 mb-1">Fine (facoltativa)</label>
+          <label for="ricorrenteDataFine" class="block text-xs font-medium text-gray-600 mb-1">Fine (facoltativa)</label>
           <input type="date" id="ricorrenteDataFine" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
         </div>
       </div>
@@ -591,7 +594,7 @@
       <!-- Toggle privata -->
       <div class="flex items-center gap-3 mb-3">
         <button type="button" id="toggleRicPrivata" onclick="toggleRicPrivata()"
-          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200 focus:outline-none"
+          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200"
           role="switch" aria-checked="false">
           <span id="toggleRicPrivataThumb" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
         </button>
@@ -603,7 +606,7 @@
       <!-- Toggle attiva (solo in modifica) -->
       <div id="ricorrenteAttivaRow" class="hidden items-center gap-3 mb-5">
         <button type="button" id="toggleRicAttiva" onclick="toggleRicAttiva()"
-          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200 focus:outline-none"
+          class="relative w-10 h-6 rounded-full bg-gray-200 transition-colors duration-200"
           role="switch" aria-checked="true">
           <span id="toggleRicAttivaThumb" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"></span>
         </button>
@@ -663,15 +666,15 @@
     <div id="eventoErrore" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
     <input type="hidden" id="eventoId">
     <div class="mb-3">
-      <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
+      <label for="eventoNome" class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
       <input type="text" id="eventoNome" maxlength="255" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
     </div>
     <div class="mb-3">
-      <label class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
+      <label for="eventoDescrizione" class="block text-xs font-medium text-gray-600 mb-1">Descrizione</label>
       <input type="text" id="eventoDescrizione" maxlength="500" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
     </div>
     <div class="mb-4 flex items-center gap-3">
-      <label class="text-xs font-medium text-gray-600">Colore</label>
+      <label for="eventoColore" class="text-xs font-medium text-gray-600">Colore</label>
       <input type="color" id="eventoColore" value="#4f46e5" class="h-9 w-16 border border-gray-200 rounded-lg cursor-pointer">
     </div>
     <div class="border-t pt-4 mb-4">
@@ -691,6 +694,6 @@
   </div>
 </div>
 <script src="assets/eventi_shared.js?v=4" defer></script>
-<script src="assets/app.js?v=8" defer></script>
+<script src="assets/app.js?v=9" defer></script>
 </body>
 </html>
