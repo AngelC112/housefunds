@@ -420,7 +420,7 @@
       sessionStorage.setItem('utente',      JSON.stringify(dati.utente));
       sessionStorage.setItem('casa_attiva', JSON.stringify(dati.casa_attiva || null));
       sessionStorage.setItem('csrf_token',  dati.csrf_token || '');
-      window.location.href = BASE_URL + '/app.html';
+      window.location.replace(BASE_URL + '/app.html');
     }
 
     // ── Token invito da URL ──────────────────────────────────────
@@ -457,10 +457,7 @@
               await gestisciTokenConSessione(tokenInvito, checkData.dati);
             } else {
               // Nessun invito: redirect normale
-              const casaAttiva = JSON.parse(sessionStorage.getItem('casa_attiva') || 'null')
-                               || checkData.dati?.casa_attiva;
-              const ruolo = casaAttiva?.ruolo;
-              window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+              window.location.replace(BASE_URL + '/app.html');
             }
             return;
           } else {
@@ -527,8 +524,7 @@
         const data = await res.json();
         if (!data.successo) {
           // Invito non valido: redirect normale
-          const ruolo = utenteDati?.casa_attiva?.ruolo;
-          window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+          window.location.replace(BASE_URL + '/app.html');
           return;
         }
         document.getElementById('invitoNomeCasa').textContent = data.dati.casa_nome;
@@ -537,8 +533,7 @@
         document.getElementById('invitoNonLoggato').classList.add('hidden');
         mostraCard('cardInvito');
       } catch(_) {
-        const ruolo = utenteDati?.casa_attiva?.ruolo;
-        window.location.href = BASE_URL + (ruolo === 'admin' ? '/admin.html' : '/app.html');
+        window.location.replace(BASE_URL + '/app.html');
       }
     }
 
