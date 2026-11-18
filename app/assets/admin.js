@@ -1544,3 +1544,13 @@ async function caricaEventi() {
     el.innerHTML = `<div class="text-red-600 text-sm py-4">Errore: ${esc(e.message)}</div>`;
   }
 }
+
+// "← App": se si arriva dall'app torna indietro nella cronologia, così
+// "Indietro" dall'app non riapre la pagina admin; altrimenti la sostituisce.
+function tornaAllApp() {
+  const app = (window.BASE_URL || '') + '/app.html';
+  let daApp = false;
+  try { daApp = new URL(document.referrer).pathname === app; } catch (_) {}
+  if (daApp && history.length > 1) history.back();
+  else window.location.replace(app);
+}
