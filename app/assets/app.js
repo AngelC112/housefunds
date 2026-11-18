@@ -42,6 +42,8 @@ function isAdmin() {
 }
 
 // ── Init ─────────────────────────────────────────────────────
+// Pagina ripresa dalla cache del browser (es. "← App" dall'admin): ricarica i dati
+window.addEventListener('pageshow', e => { if (e.persisted) window.location.reload(); });
 document.addEventListener('DOMContentLoaded', async () => {
   const raw = sessionStorage.getItem('utente');
   if (!raw) { window.location.href = (window.BASE_URL || '') + '/index.html'; return; }
